@@ -1,0 +1,17 @@
+RELATIVE GRADE ANALYTICS - SUMMARY & CONCLUSION REPORT
+=====================================================
+
+Added to the MARK_MODE-based CAT-I / CAT-II / Combined HTML application:
+
+1. New Summary & Conclusion tab.
+2. Automatically generated executive summary for the selected analysis mode and active filters.
+3. Verification status (VERIFIED / REVIEW REQUIRED).
+4. Key findings: N, mean, median, SD, CV, quartiles, skewness, proposed grade shares.
+5. Combined mode: improved / declined percentages for matched student-course-class pairs.
+6. Highest and lowest mean groups according to current Course / Faculty / Class analysis selection.
+7. Automated conclusion based on the calculated statistics.
+8. Review notes that flag high variability, strong skewness, validation problems, and combined-mode requirements.
+9. Summary included in Print / Save as PDF.
+10. Download Summary button creates a standalone HTML Summary & Conclusion Report.
+
+All statistics are generated from the loaded data. No sample values are hard-coded.

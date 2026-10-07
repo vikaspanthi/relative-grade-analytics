@@ -1,0 +1,265 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Relative Grade Analytics - MARK_MODE Based CAT Analysis</title>
+<script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.4/dist/chart.umd.min.js"></script>
+<style>
+:root{--nav:#17345e;--accent:#3d78d8;--accent-soft:#dceaff;--green:#dff3e7;--bg:#f4f7fb;--card:#fff;--ink:#172033;--muted:#667085;--line:#dbe3ef;--good:#167a54;--bad:#b42318;--warn:#a15c00}
+*{box-sizing:border-box}body{margin:0;font-family:Segoe UI,Arial,sans-serif;background:var(--bg);color:var(--ink)}button,input,select{font:inherit}.top{position:sticky;top:0;z-index:30;background:var(--nav);color:#fff;padding:12px 16px;display:flex;gap:10px;align-items:center;flex-wrap:wrap}.brand{font-size:20px;font-weight:800;margin-right:auto}.brand small{display:block;font-size:11px;font-weight:500;color:#c7d6ee}.action{background:#f8fbff;border:1px solid #aac2e7;color:#17345e;border-radius:8px;padding:9px 13px;font-weight:700;cursor:pointer}.modebar{background:#fff;border-bottom:1px solid var(--line);padding:10px 14px;display:flex;gap:8px;align-items:center;flex-wrap:wrap}.modebar strong{margin-right:4px}.modebtn,.tabbtn,.lightbtn{border:1px solid #b9ccec;background:#eef5ff;color:#264c76;border-radius:8px;padding:8px 13px;font-weight:700;cursor:pointer}.modebtn.active,.tabbtn.active{background:var(--accent-soft);border-color:#77a3e3;color:#123d77}.lightbtn.active{background:var(--green);border-color:#91c7a4;color:#215d3d}.tabs{background:#fff;border-bottom:1px solid var(--line);padding:8px 14px;display:flex;gap:8px;flex-wrap:wrap}.wrap{max-width:1650px;margin:auto;padding:15px}.uploadgrid{display:grid;grid-template-columns:minmax(0,1.5fr) minmax(280px,.5fr);gap:12px;margin-bottom:12px}.uploadcard,.panel,.kpi{background:#fff;border:1px solid var(--line);border-radius:12px}.uploadcard{padding:13px}.uploadcard h3,.panel h3{margin:0 0 9px}.filebox{border:2px dashed #b9c9de;border-radius:9px;padding:11px;background:#fbfdff}.filebox input{width:100%}.meta{font-size:12px;color:var(--muted);margin-top:7px}.combinedControls{display:none;background:#fff;border:1px solid var(--line);border-radius:10px;padding:10px;margin-bottom:12px;gap:10px;align-items:end;flex-wrap:wrap}.combinedControls.show{display:flex}.combinedControls label,.filters label{font-size:12px;color:var(--muted)}.combinedControls input,.filters select,.filters input{display:block;padding:8px;border:1px solid var(--line);border-radius:7px;background:#fff}.combinedControls input{width:90px}.filters{display:flex;gap:8px;flex-wrap:wrap;background:#fff;border:1px solid var(--line);border-radius:10px;padding:10px;margin-bottom:12px}.filters select,.filters input{min-width:180px}.view{display:none}.view.active{display:block}.caption{font-size:17px;font-weight:800;margin:3px 0 9px}.subcap{font-size:12px;color:var(--muted);margin:-4px 0 10px}.kpigrid{display:grid;grid-template-columns:repeat(6,minmax(120px,1fr));gap:9px;margin-bottom:12px}.kpi{padding:12px;min-height:80px}.kpi .label{font-size:12px;color:var(--muted)}.kpi .value{font-size:21px;font-weight:800;margin-top:6px}.grid2{display:grid;grid-template-columns:1fr 1fr;gap:12px}.panel{padding:13px;margin-bottom:12px;min-width:0}.chartbox{height:330px;min-height:240px}.chartbox canvas{width:100%!important;height:100%!important}.toolbar{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-bottom:9px}.tablewrap{overflow:auto;max-height:530px;border:1px solid var(--line);border-radius:8px}.tablewrap.tall{max-height:660px}table{border-collapse:collapse;width:100%;background:#fff}th,td{padding:8px 9px;border-bottom:1px solid #e9eef5;text-align:left;white-space:nowrap;font-size:12px}th{position:sticky;top:0;background:#eef4fb;color:#41546d;z-index:2}.badge{display:inline-block;padding:4px 8px;border-radius:999px;background:#eef5ff;color:#27588f;font-size:12px}.good{color:var(--good);font-weight:700}.bad{color:var(--bad);font-weight:700}.warn{color:var(--warn);font-weight:700}.notice{padding:10px 12px;border-radius:8px;background:#fff8e8;border:1px solid #f0dba7;color:#76530b;margin-bottom:12px}.gradeControls{display:flex;gap:9px;flex-wrap:wrap;align-items:end;margin-bottom:10px}.gradeControls label{font-size:12px;color:var(--muted)}.gradeControls input{width:72px;display:block;padding:7px;border:1px solid var(--line);border-radius:6px}.statusline{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:10px}.statusline span{background:#f4f7fb;border:1px solid var(--line);border-radius:7px;padding:7px 9px}.validation{white-space:pre-wrap;font-family:Consolas,monospace;font-size:12px;line-height:1.5;background:#fbfcfe;border:1px solid var(--line);border-radius:8px;padding:12px}
+.summaryHero{display:grid;grid-template-columns:1.4fr .6fr;gap:12px;margin-bottom:12px}.summaryCard{background:#fff;border:1px solid var(--line);border-radius:12px;padding:15px}.summaryCard h3{margin:0 0 8px}.summaryLead{font-size:15px;line-height:1.6;color:#26364b}.findingGrid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px}.finding{background:#fbfdff;border:1px solid var(--line);border-radius:10px;padding:12px}.finding .t{font-size:12px;color:var(--muted)}.finding .v{font-size:18px;font-weight:800;margin:5px 0}.conclusionBox{background:#f8fbff;border-left:5px solid var(--accent);border-radius:10px;padding:14px;line-height:1.6}.recommendBox{background:#fffaf0;border:1px solid #efdaa8;border-radius:10px;padding:14px;line-height:1.6}.summaryList{margin:8px 0 0;padding-left:20px}.summaryList li{margin:6px 0}.reportStamp{font-size:12px;color:var(--muted);margin-top:8px}.miniTable{width:100%;border-collapse:collapse}.miniTable td,.miniTable th{padding:7px 8px;border-bottom:1px solid var(--line);font-size:12px}.miniTable th{background:#eef4fb}.verifyGood{background:#e9f7ef;color:#14623f;border:1px solid #a9d9bd;padding:7px 10px;border-radius:8px;font-weight:800}.verifyBad{background:#fff0ee;color:#9a241d;border:1px solid #efb4ae;padding:7px 10px;border-radius:8px;font-weight:800}@media(max-width:900px){.summaryHero{grid-template-columns:1fr}.findingGrid{grid-template-columns:1fr 1fr}}@media(max-width:620px){.findingGrid{grid-template-columns:1fr}}
+.hidden{display:none!important}
+@media(max-width:1050px){.kpigrid{grid-template-columns:repeat(3,1fr)}.grid2,.uploadgrid{grid-template-columns:1fr}}@media(max-width:620px){.kpigrid{grid-template-columns:repeat(2,1fr)}.wrap{padding:9px}.filters select,.filters input{min-width:145px}.chartbox{height:280px}}
+@media print{.top,.modebar,.tabs,.uploadgrid,.filters,.combinedControls,.toolbar,.noprint{display:none!important}.view{display:block!important;page-break-before:always}.view:first-of-type{page-break-before:auto}.tablewrap{max-height:none;overflow:visible}.panel{break-inside:avoid}.chartbox{height:290px}.wrap{max-width:none;padding:0}}
+</style>
+</head>
+<body>
+<div class="top">
+  <div class="brand">Relative Grade Analytics<small>MARK_MODE based CAT-I, CAT-II and Combined result analysis</small></div>
+  <button class="action" id="analyzeBtn">Analyze</button>
+  <button class="action" id="csvBtn">Export CSV</button>
+  <button class="action" id="pdfBtn">Export PDF</button>
+  <button class="action" id="summaryDownloadBtn">Download Summary</button>
+</div>
+<div class="modebar noprint">
+  <strong>Analysis Mode:</strong>
+  <button class="modebtn active" data-analysis-mode="cat1">CAT-I Only</button>
+  <button class="modebtn" data-analysis-mode="cat2">CAT-II Only</button>
+  <button class="modebtn" data-analysis-mode="combined">Combined CAT-I + CAT-II</button>
+  <span class="badge" id="modeStatus">CAT-I mode</span>
+</div>
+<div class="tabs noprint" id="tabs">
+  <button class="tabbtn active" data-view="dashboard">Dashboard</button>
+  <button class="tabbtn" data-view="analysis">Analysis</button>
+  <button class="tabbtn" data-view="students">Students</button>
+  <button class="tabbtn" data-view="grades">Grade Levels</button>
+  <button class="tabbtn" data-view="validation">Validation</button>
+  <button class="tabbtn" data-view="summaryReport">Summary & Conclusion</button>
+</div>
+<div class="wrap">
+  <div class="uploadgrid noprint">
+    <div class="uploadcard"><h3>Result Excel / CSV file(s)</h3><div class="filebox"><input id="files" type="file" multiple accept=".xlsx,.xls,.csv"></div><div class="meta" id="fileMeta">Select one file containing CAT1/CAT2 rows, or select multiple same-format files. Assessment type is detected from <b>MARK_MODE</b>.</div></div>
+    <div class="uploadcard"><h3>Detected MARK_MODE</h3><div class="statusline" id="detectedModes"><span>CAT1: 0</span><span>CAT2: 0</span></div><div class="meta">Recognized values include CAT1 / CAT-I / CAT 1 and CAT2 / CAT-II / CAT 2. Unsupported values are reported under Validation.</div></div>
+  </div>
+  <div class="notice noprint"><b>Automatic assessment identification:</b> The application uses <code>MARK_MODE</code>. Rows with CAT1 are used for CAT-I analysis; rows with CAT2 are used for CAT-II analysis. Combined mode matches the same <code>REG_NO + COURSE_CODE + CLASS_ID</code>.</div>
+  <div class="combinedControls noprint" id="combinedControls">
+    <strong>Combined score weights</strong>
+    <label>CAT-I %<input id="w1" type="number" min="0" max="100" step="5" value="50"></label>
+    <label>CAT-II %<input id="w2" type="number" min="0" max="100" step="5" value="50"></label>
+    <span class="badge">Combined score is normalized to 100 using each CAT's MAX_MARK.</span>
+  </div>
+  <div class="filters noprint">
+    <label>Course<select id="courseFilter"><option>All</option></select></label>
+    <label>Faculty<select id="facultyFilter"><option>All</option></select></label>
+    <label>Class ID<select id="classFilter"><option>All</option></select></label>
+    <label>Student search<input id="studentSearch" placeholder="Reg no / name"></label>
+  </div>
+
+  <section id="dashboard" class="view active">
+    <div class="caption" id="dashboardCaption">CAT-I Dashboard Results</div><div class="subcap" id="dashboardSubcap">Present-student statistics and graphical result analysis</div>
+    <div class="kpigrid" id="kpis"></div>
+    <div class="grid2">
+      <div class="panel"><h3 id="summaryChartCaption">Statistical Summary</h3><div class="chartbox"><canvas id="summaryChart"></canvas></div></div>
+      <div class="panel"><h3 id="statusChartCaption">Student Status</h3><div class="chartbox"><canvas id="statusChart"></canvas></div></div>
+    </div>
+    <div class="grid2">
+      <div class="panel"><h3 id="histCaption">Marks Distribution</h3><div class="chartbox"><canvas id="histChart"></canvas></div></div>
+      <div class="panel" id="changePanel"><h3>Combined Student Change</h3><div class="chartbox"><canvas id="changeChart"></canvas></div></div>
+    </div>
+    <div class="panel" id="scatterPanel"><h3>CAT-I vs CAT-II Scatter Plot</h3><div class="subcap">Only available in Combined mode. Above the diagonal indicates CAT-II improvement.</div><div class="chartbox"><canvas id="scatterChart"></canvas></div></div>
+  </section>
+
+  <section id="analysis" class="view">
+    <div class="caption" id="analysisPageCaption">CAT-I Result Analysis</div><div class="subcap">Analyze by course, faculty or class</div>
+    <div class="toolbar noprint"><button class="lightbtn active" data-group="course">Course Analysis</button><button class="lightbtn" data-group="faculty">Faculty Analysis</button><button class="lightbtn" data-group="class">Class Analysis</button><button class="lightbtn" id="toggleAnalysisTable">Hide Table</button><button class="lightbtn" id="toggleAnalysisChart">Hide Chart</button></div>
+    <div class="panel" id="analysisTablePanel"><h3 id="analysisCaption">Course-wise Result Analysis</h3><div class="tablewrap" id="analysisTable"></div></div>
+    <div class="panel" id="analysisChartPanel"><h3 id="analysisGraphCaption">Course-wise Mean Marks</h3><div class="chartbox"><canvas id="analysisChart"></canvas></div></div>
+  </section>
+
+  <section id="students" class="view">
+    <div class="caption" id="studentTitle">CAT-I Student Result Details</div><div class="subcap" id="studentCaption">Student-level result table</div>
+    <div class="panel"><div class="tablewrap tall" id="studentTable"></div></div>
+  </section>
+
+  <section id="grades" class="view">
+    <div class="caption" id="gradeTitle">CAT-I Grade Levels Result</div><div class="subcap">Statistical what-if grade levels only; not official grades.</div>
+    <div class="gradeControls noprint"><label>S μ +<input id="gS" value="1.5" type="number" step="0.1"></label><label>A μ +<input id="gA" value="1.0" type="number" step="0.1"></label><label>B μ +<input id="gB" value="0.5" type="number" step="0.1"></label><label>D μ +<input id="gD" value="-0.5" type="number" step="0.1"></label><label>E μ +<input id="gE" value="-1.0" type="number" step="0.1"></label><button class="lightbtn" id="gradeBtn">Recalculate</button></div>
+    <div class="statusline" id="gradeSummary"></div>
+    <div class="grid2"><div class="panel"><h3>Grade Boundary Table</h3><div class="tablewrap" id="gradeTable"></div></div><div class="panel"><h3>Complete Proposed Grade Distribution</h3><div class="chartbox"><canvas id="gradeChart"></canvas></div></div></div>
+  </section>
+
+  <section id="validation" class="view">
+    <div class="caption">Data Verification Result</div><div class="subcap" id="validationSubcap">Validation follows the selected analysis mode</div>
+    <div class="statusline" id="validationBadges"></div>
+    <div class="validation" id="validationText">Select one or more result files. The app will identify CAT-I and CAT-II from MARK_MODE, then click Analyze.</div>
+  </section>
+
+  <section id="summaryReport" class="view">
+    <div class="caption" id="summaryTitle">Summary & Conclusion Report</div>
+    <div class="subcap" id="summarySubtitle">Automatically generated from the selected analysis mode and active filters</div>
+    <div class="summaryHero">
+      <div class="summaryCard"><h3>Executive Summary</h3><div class="summaryLead" id="executiveSummary">Analyze data to generate the executive summary.</div><div class="reportStamp" id="summaryStamp"></div></div>
+      <div class="summaryCard"><h3>Verification</h3><div id="summaryVerification">Waiting for data.</div></div>
+    </div>
+    <div class="panel"><h3>Key Findings</h3><div class="findingGrid" id="summaryFindings"></div></div>
+    <div class="grid2">
+      <div class="panel"><h3>Highest Mean Groups</h3><div id="summaryTopGroups"></div></div>
+      <div class="panel"><h3>Lowest Mean Groups</h3><div id="summaryLowGroups"></div></div>
+    </div>
+    <div class="panel"><h3>Conclusion</h3><div class="conclusionBox" id="summaryConclusion">No conclusion available until data is analyzed.</div></div>
+    <div class="panel"><h3>Review Notes</h3><div class="recommendBox" id="summaryRecommendations">Statistical outputs are decision-support information and do not automatically determine official grades.</div></div>
+  </section>
+</div>
+<script>
+const $=id=>document.getElementById(id);
+let allRows=[],cat1=[],cat2=[],otherModes=[],paired=[],activeRows=[],filteredRows=[],analysisMode='cat1',groupMode='course',charts={};
+const req=['REG_NO','STUDENT_NAME','COURSE_CODE','TITLE','CLASS_ID','FACULTY_NAME','MARK_MODE','STUDENT_STATUS','MARK_CONSIDER','MAX_MARK'];
+const aliases={REG_NO:['REG_NO','REGNO','REGISTRATION_NUMBER','REGISTER_NO'],STUDENT_NAME:['STUDENT_NAME','NAME','STUDENT'],COURSE_CODE:['COURSE_CODE','COURSECODE'],TITLE:['TITLE','COURSE_TITLE'],CLASS_ID:['CLASS_ID','CLASSID','SECTION'],FACULTY_NAME:['FACULTY_NAME','FACULTY'],MARK_MODE:['MARK_MODE','MARKMODE','ASSESSMENT_MODE','ASSESSMENT','EXAM_TYPE','TEST_TYPE'],ERP_ID:['ERP_ID','FACULTY_ID'],STUDENT_STATUS:['STUDENT_STATUS','STATUS'],MARK_CONSIDER:['MARK_CONSIDER','MARKS','MARK','SCORE'],MAX_MARK:['MAX_MARK','MAXMARK','MAXIMUM_MARK'],WEIGHTAGE_MARK:['WEIGHTAGE_MARK','WEIGHTAGE']};
+function normKey(s){return String(s??'').trim().toUpperCase().replace(/[^A-Z0-9]/g,'')}
+function normalizeMarkMode(v){const x=normKey(v);if(['CAT1','CATI','CAT01','CATONE'].includes(x))return 'CAT1';if(['CAT2','CATII','CAT02','CATTWO'].includes(x))return 'CAT2';return x}
+function normalizeRows(rows){return rows.map(row=>{const map={};for(const [k,v] of Object.entries(row))map[normKey(k)]=v;const o={};for(const [canon,opts] of Object.entries(aliases)){let found='';for(const a of opts){const key=normKey(a);if(Object.prototype.hasOwnProperty.call(map,key)){found=map[key];break}}o[canon]=found}for(const [k,v] of Object.entries(row))if(!(k in o))o[k]=v;o.MARK_MODE=normalizeMarkMode(o.MARK_MODE);return o})}
+function n(v){if(v===null||v===undefined||v==='')return null;const x=Number(v);return Number.isFinite(x)?x:null}
+function f(v,d=2){return v===null||v===undefined||!Number.isFinite(Number(v))?'—':Number(v).toFixed(d)}
+function isPresent(r){return String(r.STUDENT_STATUS||'').trim().toLowerCase()==='present'}
+function key(r){return [r.REG_NO,r.COURSE_CODE,r.CLASS_ID].map(x=>String(x??'').trim()).join('¦')}
+async function readFile(file){if(!file)return[];let rows;if(file.name.toLowerCase().endsWith('.csv')){const text=await file.text();const wb=XLSX.read(text,{type:'string'});rows=normalizeRows(XLSX.utils.sheet_to_json(wb.Sheets[wb.SheetNames[0]],{defval:''}))}else{const buf=await file.arrayBuffer();const wb=XLSX.read(buf,{type:'array'});rows=normalizeRows(XLSX.utils.sheet_to_json(wb.Sheets[wb.SheetNames[0]],{defval:''}))}return rows.map(r=>({...r,_SOURCE_FILE:file.name}))}
+function percentile(sorted,p){if(!sorted.length)return null;if(sorted.length===1)return sorted[0];const pos=(sorted.length-1)*p,lo=Math.floor(pos),hi=Math.ceil(pos);return lo===hi?sorted[lo]:sorted[lo]+(sorted[hi]-sorted[lo])*(pos-lo)}
+function stats(rows,field='MARK_CONSIDER'){const x=rows.filter(isPresent).map(r=>n(r[field])).filter(v=>v!==null).sort((a,b)=>a-b);const N=x.length;if(!N)return{N:0,mean:null,median:null,sd:null,min:null,max:null,q1:null,q3:null,variance:null,cv:null};const mean=x.reduce((a,b)=>a+b,0)/N;const variance=x.reduce((a,v)=>a+(v-mean)**2,0)/N;const sd=Math.sqrt(variance);return{N,mean,median:percentile(x,.5),sd,min:x[0],max:x[N-1],q1:percentile(x,.25),q3:percentile(x,.75),variance,cv:mean?sd/mean*100:null}}
+function validate(rows,label){const missingCols=req.filter(c=>!rows.some(r=>String(r[c]??'').trim()!==''));const seen=new Set();let dup=0,invalid=0,missing=0,zero=0,full=0;for(const r of rows){const k=key(r);if(seen.has(k))dup++;seen.add(k);const m=n(r.MARK_CONSIDER),mx=n(r.MAX_MARK);if(m!==null&&mx!==null&&(m<0||m>mx))invalid++;if(isPresent(r)){if(m===null)missing++;else if(m===0)zero++;if(m!==null&&mx!==null&&m===mx)full++}}const status={Present:0,Absent:0,Debarred:0,Other:0};rows.forEach(r=>{const s=String(r.STUDENT_STATUS||'').trim();if(s==='Present')status.Present++;else if(s==='Absent')status.Absent++;else if(s==='Debarred')status.Debarred++;else status.Other++});return{label,records:rows.length,uniqueStudents:new Set(rows.map(r=>r.REG_NO)).size,courses:new Set(rows.map(r=>r.COURSE_CODE)).size,faculty:new Set(rows.map(r=>r.ERP_ID||r.FACULTY_NAME)).size,classes:new Set(rows.map(r=>r.CLASS_ID)).size,missingCols,dup,invalid,missing,zero,full,status}}
+function status(rows){const out={Present:0,Absent:0,Debarred:0,Other:0};rows.forEach(r=>{const s=String(r.STUDENT_STATUS||'');if(s==='Present')out.Present++;else if(s==='Absent')out.Absent++;else if(s==='Debarred')out.Debarred++;else out.Other++});return out}
+function chart(name,id,cfg){if(charts[name])charts[name].destroy();charts[name]=new Chart($(id),cfg)}
+function table(rows,cols){if(!rows.length)return'<div style="padding:12px">No records for the current selection.</div>';return'<table><thead><tr>'+cols.map(c=>'<th>'+c[1]+'</th>').join('')+'</tr></thead><tbody>'+rows.map(r=>'<tr>'+cols.map(c=>'<td>'+escapeHtml(c[2]?c[2](r):r[c[0]])+'</td>').join('')+'</tr>').join('')+'</tbody></table>'}
+function escapeHtml(v){return String(v??'').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[m]))}
+function pairData(){const m1=new Map(cat1.map(r=>[key(r),r])),m2=new Map(cat2.map(r=>[key(r),r]));const keys=new Set([...m1.keys(),...m2.keys()]);paired=[];for(const k of keys){const a=m1.get(k),b=m2.get(k),base=a||b;const mA=a?n(a.MARK_CONSIDER):null,mB=b?n(b.MARK_CONSIDER):null,maxA=a?n(a.MAX_MARK):null,maxB=b?n(b.MAX_MARK):null;const bothPresent=!!a&&!!b&&isPresent(a)&&isPresent(b)&&mA!==null&&mB!==null&&maxA>0&&maxB>0;paired.push({KEY:k,REG_NO:base?.REG_NO??'',STUDENT_NAME:base?.STUDENT_NAME??'',PROGRAMME_CODE:base?.PROGRAMME_CODE??'',COURSE_CODE:base?.COURSE_CODE??'',TITLE:base?.TITLE??'',CLASS_ID:base?.CLASS_ID??'',ERP_ID:base?.ERP_ID??'',FACULTY_NAME:base?.FACULTY_NAME??'',CAT1_STATUS:a?.STUDENT_STATUS??'Missing',CAT2_STATUS:b?.STUDENT_STATUS??'Missing',CAT1_MARK:mA,CAT2_MARK:mB,CAT1_MAX:maxA,CAT2_MAX:maxB,DIFFERENCE:(mA!==null&&mB!==null)?mB-mA:null,CHANGE:(mA!==null&&mB!==null)?(mB>mA?'Improved':mB<mA?'Declined':'No change'):'Not comparable',BOTH_PRESENT:bothPresent})}}
+function combinedRows(){let w1=Math.max(0,Math.min(100,n($('w1').value)??50)),w2=Math.max(0,Math.min(100,n($('w2').value)??50));const total=w1+w2;if(total<=0){w1=50;w2=50}else{w1=100*w1/total;w2=100*w2/total}return paired.map(r=>{const p1=r.BOTH_PRESENT?100*r.CAT1_MARK/r.CAT1_MAX:null,p2=r.BOTH_PRESENT?100*r.CAT2_MARK/r.CAT2_MAX:null;const score=r.BOTH_PRESENT?(w1*p1+w2*p2)/100:null;return{...r,STUDENT_STATUS:r.BOTH_PRESENT?'Present':'Incomplete',MARK_CONSIDER:score,MAX_MARK:100,COMBINED_SCORE:score,WEIGHT1:w1,WEIGHT2:w2}})}
+function modeLabel(){return analysisMode==='cat1'?'CAT-I':analysisMode==='cat2'?'CAT-II':'Combined'}
+function currentRows(){return analysisMode==='cat1'?cat1:analysisMode==='cat2'?cat2:combinedRows()}
+function populateFilters(){const rows=currentRows();for(const [id,field] of [['courseFilter','COURSE_CODE'],['facultyFilter','FACULTY_NAME'],['classFilter','CLASS_ID']]){const el=$(id),old=el.value;el.innerHTML='<option>All</option>';[...new Set(rows.map(r=>String(r[field]??'')).filter(Boolean))].sort().forEach(v=>el.add(new Option(v,v)));if([...el.options].some(o=>o.value===old))el.value=old}}
+function applyFilters(){activeRows=currentRows();const c=$('courseFilter').value,fa=$('facultyFilter').value,cl=$('classFilter').value,q=$('studentSearch').value.trim().toLowerCase();filteredRows=activeRows.filter(r=>(c==='All'||String(r.COURSE_CODE)===c)&&(fa==='All'||String(r.FACULTY_NAME)===fa)&&(cl==='All'||String(r.CLASS_ID)===cl)&&(!q||`${r.REG_NO} ${r.STUDENT_NAME}`.toLowerCase().includes(q)));renderAll()}
+function renderAll(){renderDashboard();renderStudents();renderAnalysis();renderGrades();renderValidation();renderSummaryReport()}
+function kpi(label,value){return`<div class="kpi"><div class="label">${label}</div><div class="value">${value}</div></div>`}
+function renderDashboard(){const label=modeLabel(),s=stats(filteredRows),st=status(filteredRows);$('dashboardCaption').textContent=`${label} Dashboard Results`;$('dashboardSubcap').textContent=analysisMode==='combined'?'Weighted combined percentage for students Present in both CATs':'Present-student statistics and graphical result analysis';$('kpis').innerHTML=[kpi('Records',filteredRows.length.toLocaleString()),kpi('Present',s.N.toLocaleString()),kpi('Students',new Set(filteredRows.map(r=>r.REG_NO)).size.toLocaleString()),kpi('Mean',f(s.mean)),kpi('Median',f(s.median)),kpi('SD',f(s.sd)),kpi('Q1',f(s.q1)),kpi('Q3',f(s.q3)),kpi('Minimum',f(s.min)),kpi('Maximum',f(s.max)),kpi('Courses',new Set(filteredRows.map(r=>r.COURSE_CODE)).size),kpi('Classes',new Set(filteredRows.map(r=>r.CLASS_ID)).size)].join('');$('summaryChartCaption').textContent=`${label} Statistical Summary`;$('statusChartCaption').textContent=`${label} Student Status`;$('histCaption').textContent=`${label} Marks Distribution`;
+chart('summary','summaryChart',{type:'bar',data:{labels:['Mean','Median','Q1','Q3','Min','Max'],datasets:[{label:label,data:[s.mean||0,s.median||0,s.q1||0,s.q3||0,s.min||0,s.max||0]}]},options:{responsive:true,maintainAspectRatio:false}});
+chart('status','statusChart',{type:'bar',data:{labels:Object.keys(st),datasets:[{label:'Records',data:Object.values(st)}]},options:{responsive:true,maintainAspectRatio:false}});
+const present=filteredRows.filter(isPresent),maxMark=Math.max(1,...present.map(r=>n(r.MAX_MARK)||0)),bins=10,width=maxMark/bins,counts=Array(bins).fill(0);present.forEach(r=>{const v=n(r.MARK_CONSIDER);if(v===null)return;let i=Math.floor(v/width);if(i>=bins)i=bins-1;if(i<0)i=0;counts[i]++});chart('hist','histChart',{type:'bar',data:{labels:counts.map((_,i)=>`${Math.round(i*width)}-${Math.round((i+1)*width)}`),datasets:[{label:'Students',data:counts}]},options:{responsive:true,maintainAspectRatio:false}});
+const combined=analysisMode==='combined';$('changePanel').classList.toggle('hidden',!combined);$('scatterPanel').classList.toggle('hidden',!combined);if(combined){const cmp=filteredRows.filter(r=>r.CAT1_MARK!==null&&r.CAT2_MARK!==null),chg={Improved:0,Declined:0,'No change':0};cmp.forEach(r=>{if(chg[r.CHANGE]!==undefined)chg[r.CHANGE]++});chart('change','changeChart',{type:'bar',data:{labels:Object.keys(chg),datasets:[{label:'Students',data:Object.values(chg)}]},options:{responsive:true,maintainAspectRatio:false}});const max=Math.max(1,...cmp.flatMap(r=>[r.CAT1_MAX||0,r.CAT2_MAX||0]));chart('scatter','scatterChart',{type:'scatter',data:{datasets:[{label:'Matched students',data:cmp.slice(0,4000).map(r=>({x:r.CAT1_MARK,y:r.CAT2_MARK}))},{label:'No change line',type:'line',data:[{x:0,y:0},{x:max,y:max}],pointRadius:0,borderDash:[6,6]}]},options:{responsive:true,maintainAspectRatio:false,scales:{x:{title:{display:true,text:'CAT-I marks'},min:0,max:max},y:{title:{display:true,text:'CAT-II marks'},min:0,max:max}}}})}}
+function rankPercent(rows){const vals=rows.filter(isPresent).map(r=>n(r.MARK_CONSIDER)).filter(v=>v!==null).sort((a,b)=>a-b);const map=new Map();for(const v of new Set(vals)){const less=vals.filter(x=>x<v).length,equal=vals.filter(x=>x===v).length;map.set(v,100*(less+(equal+1)/2)/vals.length)}return map}
+function renderStudents(){const label=modeLabel();$('studentTitle').textContent=`${label} Student Result Details`;$('studentCaption').textContent=`Showing ${filteredRows.length.toLocaleString()} result rows for the current filters`;if(analysisMode==='combined'){$('studentTable').innerHTML=table(filteredRows.slice(0,2500),[['REG_NO','Reg No'],['STUDENT_NAME','Student'],['COURSE_CODE','Course'],['CLASS_ID','Class'],['FACULTY_NAME','Faculty'],['CAT1_STATUS','CAT-I Status'],['CAT1_MARK','CAT-I Mark',r=>f(r.CAT1_MARK)],['CAT2_STATUS','CAT-II Status'],['CAT2_MARK','CAT-II Mark',r=>f(r.CAT2_MARK)],['DIFFERENCE','Difference',r=>f(r.DIFFERENCE)],['CHANGE','Change'],['COMBINED_SCORE','Combined %',r=>f(r.COMBINED_SCORE)]])}else{const ranks=rankPercent(filteredRows),s=stats(filteredRows);$('studentTable').innerHTML=table(filteredRows.slice(0,2500),[['REG_NO','Reg No'],['STUDENT_NAME','Student'],['COURSE_CODE','Course'],['TITLE','Title'],['CLASS_ID','Class'],['FACULTY_NAME','Faculty'],['MARK_MODE','Mark Mode'],['STUDENT_STATUS','Status'],['MARK_CONSIDER','Marks',r=>f(n(r.MARK_CONSIDER))],['MAX_MARK','Max',r=>f(n(r.MAX_MARK),0)],['Percentile','Percentile',r=>{const v=n(r.MARK_CONSIDER);return v===null?'—':f(ranks.get(v))}],['Z','Z-score',r=>{const v=n(r.MARK_CONSIDER);return v===null||!s.sd?'—':f((v-s.mean)/s.sd)}]])}}
+function groupSummary(){const map=new Map();for(const r of filteredRows){const k=groupMode==='course'?`${r.COURSE_CODE} | ${r.TITLE}`:groupMode==='faculty'?`${r.ERP_ID||''} | ${r.FACULTY_NAME}`:String(r.CLASS_ID);if(!map.has(k))map.set(k,[]);map.get(k).push(r)}const out=[];for(const [level,rows] of map){const s=stats(rows),st=status(rows);const item={Level:level,N:s.N,Mean:s.mean,Median:s.median,SD:s.sd,Min:s.min,Max:s.max,Q1:s.q1,Q3:s.q3,Present:st.Present,Absent:st.Absent,Debarred:st.Debarred};if(analysisMode==='combined'){const cmp=rows.filter(r=>r.CAT1_MARK!==null&&r.CAT2_MARK!==null);item.Improved=cmp.filter(r=>r.DIFFERENCE>0).length;item.Declined=cmp.filter(r=>r.DIFFERENCE<0).length}out.push(item)}return out.sort((a,b)=>(b.Mean??-999)-(a.Mean??-999))}
+function renderAnalysis(){const label=modeLabel(),title=groupMode[0].toUpperCase()+groupMode.slice(1),rows=groupSummary();$('analysisPageCaption').textContent=`${label} Result Analysis`;$('analysisCaption').textContent=`${title}-wise ${label} Result Analysis`;$('analysisGraphCaption').textContent=`${title}-wise ${label} Mean Marks`;const cols=[['Level',title],['N','N'],['Mean','Mean',r=>f(r.Mean)],['Median','Median',r=>f(r.Median)],['SD','SD',r=>f(r.SD)],['Min','Min',r=>f(r.Min)],['Max','Max',r=>f(r.Max)],['Q1','Q1',r=>f(r.Q1)],['Q3','Q3',r=>f(r.Q3)],['Present','Present'],['Absent','Absent'],['Debarred','Debarred']];if(analysisMode==='combined')cols.push(['Improved','Improved'],['Declined','Declined']);$('analysisTable').innerHTML=table(rows,cols);const top=rows.slice(0,15);chart('analysis','analysisChart',{type:'bar',data:{labels:top.map(r=>r.Level.length>28?r.Level.slice(0,28)+'…':r.Level),datasets:[{label:`${label} Mean`,data:top.map(r=>r.Mean||0)}]},options:{responsive:true,maintainAspectRatio:false,indexAxis:'y'}})}
+function gradeDist(rows){const s=stats(rows);if(!s.N)return null;const mul={S:+$('gS').value,A:+$('gA').value,B:+$('gB').value,D:+$('gD').value,E:+$('gE').value};const b={S:s.mean+mul.S*s.sd,A:s.mean+mul.A*s.sd,B:s.mean+mul.B*s.sd,C:s.mean,D:s.mean+mul.D*s.sd,E:s.mean+mul.E*s.sd};const counts={S:0,A:0,B:0,C:0,D:0,E:0,F:0};rows.filter(isPresent).forEach(r=>{const v=n(r.MARK_CONSIDER);if(v===null)return;let g='F';for(const k of ['S','A','B','C','D','E'])if(v>=b[k]){g=k;break}counts[g]++});return{s,b,counts}}
+function renderGrades(){const label=modeLabel();$('gradeTitle').textContent=`${label} Grade Levels Result`;const g=gradeDist(filteredRows);if(!g){$('gradeTable').innerHTML='<div style="padding:12px">No Present marks available.</div>';$('gradeSummary').innerHTML='';return}const grades=['S','A','B','C','D','E','F'];$('gradeSummary').innerHTML=`<span>Mode <b>${label}</b></span><span>N <b>${g.s.N}</b></span><span>Mean <b>${f(g.s.mean)}</b></span><span>Median <b>${f(g.s.median)}</b></span><span>SD <b>${f(g.s.sd)}</b></span>`;const rows=grades.map(x=>({Grade:x,Lower:x==='F'?`< ${f(g.b.E)}`:f(g.b[x]),Students:g.counts[x],Percentage:f(100*g.counts[x]/g.s.N)+'%'}));$('gradeTable').innerHTML=table(rows,[['Grade','Grade'],['Lower','Lower Boundary'],['Students','Students'],['Percentage','Percentage']]);chart('grade','gradeChart',{type:'bar',data:{labels:grades,datasets:[{label:label,data:grades.map(x=>g.counts[x])}]},options:{responsive:true,maintainAspectRatio:false}})}
+function renderValidation(){const label=modeLabel();let text='',ok=true,badges=[];const modeCounts={CAT1:cat1.length,CAT2:cat2.length,Other:otherModes.length};
+if(analysisMode==='cat1'){const v=validate(cat1,'CAT-I / MARK_MODE=CAT1');ok=cat1.length>0&&!v.missingCols.length&&!v.dup&&!v.invalid&&!v.missing;text=validationBlock(v);badges=[`CAT1 rows: ${v.records}`,`Present: ${v.status.Present}`]}
+else if(analysisMode==='cat2'){const v=validate(cat2,'CAT-II / MARK_MODE=CAT2');ok=cat2.length>0&&!v.missingCols.length&&!v.dup&&!v.invalid&&!v.missing;text=validationBlock(v);badges=[`CAT2 rows: ${v.records}`,`Present: ${v.status.Present}`]}
+else{const v1=validate(cat1,'CAT-I / MARK_MODE=CAT1'),v2=validate(cat2,'CAT-II / MARK_MODE=CAT2'),m1=new Map(cat1.map(r=>[key(r),r])),m2=new Map(cat2.map(r=>[key(r),r]));let matched=0,only1=0,only2=0,maxMismatch=0;for(const [k,a] of m1){const b=m2.get(k);if(b){matched++;if(n(a.MAX_MARK)!==n(b.MAX_MARK))maxMismatch++}else only1++}for(const k of m2.keys())if(!m1.has(k))only2++;ok=cat1.length>0&&cat2.length>0&&[v1,v2].every(v=>!v.missingCols.length&&!v.dup&&!v.invalid&&!v.missing)&&maxMismatch===0;text=`${validationBlock(v1)}
+
+${validationBlock(v2)}
+
+PAIR VALIDATION
+Matched Student+Course+Class: ${matched}
+Only CAT-I: ${only1}
+Only CAT-II: ${only2}
+MAX_MARK mismatches: ${maxMismatch}
+
+Combined calculation uses only records Present in both CATs with valid marks.`;badges=[`Matched: ${matched}`,`Only CAT-I: ${only1}`,`Only CAT-II: ${only2}`]}
+if(otherModes.length){const vals=[...new Set(otherModes.map(r=>r.MARK_MODE||'(blank)'))];text+=`
+
+UNRECOGNIZED MARK_MODE
+Rows: ${otherModes.length}
+Values: ${vals.join(', ')}
+These rows are excluded from CAT-I/CAT-II analysis.`;ok=false;badges.push(`Other MARK_MODE: ${otherModes.length}`)}
+text=`MARK_MODE DETECTION
+CAT1 rows: ${modeCounts.CAT1}
+CAT2 rows: ${modeCounts.CAT2}
+Other/blank rows: ${modeCounts.Other}
+
+`+text;$('validationSubcap').textContent=`Validation for ${label} mode using MARK_MODE`;$('validationBadges').innerHTML=`<span class="${ok?'good':'bad'}">Verification: ${ok?'VERIFIED':'REVIEW REQUIRED'}</span>`+badges.map(x=>`<span>${x}</span>`).join('');$('validationText').textContent=text}
+function validationBlock(v){return`${v.label}\nRecords: ${v.records}\nUnique students: ${v.uniqueStudents}\nCourses: ${v.courses}\nFaculty: ${v.faculty}\nClasses: ${v.classes}\nPresent: ${v.status.Present} | Absent: ${v.status.Absent} | Debarred: ${v.status.Debarred}\nMissing required columns: ${v.missingCols.length?v.missingCols.join(', '):'None'}\nDuplicate Student+Course+Class: ${v.dup}\nInvalid marks: ${v.invalid}\nMissing marks among Present: ${v.missing}\nPresent with zero marks: ${v.zero}\nPresent with full marks: ${v.full}`}
+
+function skewnessOf(rows){const x=rows.filter(isPresent).map(r=>n(r.MARK_CONSIDER)).filter(v=>v!==null);if(x.length<3)return null;const mean=x.reduce((a,b)=>a+b,0)/x.length;const m2=x.reduce((a,v)=>a+(v-mean)**2,0)/x.length;if(!m2)return 0;const m3=x.reduce((a,v)=>a+(v-mean)**3,0)/x.length;return m3/Math.pow(m2,1.5)}
+function verificationForMode(){
+  if(analysisMode==='cat1'){
+    const v=validate(cat1,'CAT-I'); return {ok:cat1.length>0&&!v.missingCols.length&&!v.dup&&!v.invalid&&!v.missing,details:`Invalid marks: ${v.invalid}; missing Present marks: ${v.missing}; duplicate keys: ${v.dup}.`};
+  }
+  if(analysisMode==='cat2'){
+    const v=validate(cat2,'CAT-II'); return {ok:cat2.length>0&&!v.missingCols.length&&!v.dup&&!v.invalid&&!v.missing,details:`Invalid marks: ${v.invalid}; missing Present marks: ${v.missing}; duplicate keys: ${v.dup}.`};
+  }
+  const v1=validate(cat1,'CAT-I'),v2=validate(cat2,'CAT-II'),m1=new Map(cat1.map(r=>[key(r),r])),m2=new Map(cat2.map(r=>[key(r),r]));let mismatch=0,matched=0;
+  for(const [k,a] of m1){const b=m2.get(k);if(b){matched++;if(n(a.MAX_MARK)!==n(b.MAX_MARK))mismatch++}}
+  const ok=cat1.length>0&&cat2.length>0&&!v1.missingCols.length&&!v2.missingCols.length&&!v1.dup&&!v2.dup&&!v1.invalid&&!v2.invalid&&!v1.missing&&!v2.missing&&!mismatch;
+  return {ok,details:`Matched Student+Course+Class pairs: ${matched}; MAX_MARK mismatches: ${mismatch}; CAT-I invalid/missing: ${v1.invalid}/${v1.missing}; CAT-II invalid/missing: ${v2.invalid}/${v2.missing}.`};
+}
+function findingCard(title,value,note=''){return `<div class="finding"><div class="t">${escapeHtml(title)}</div><div class="v">${escapeHtml(value)}</div><div class="t">${escapeHtml(note)}</div></div>`}
+function renderSummaryReport(){
+  const label=modeLabel(),rows=filteredRows,s=stats(rows),st=status(rows),verify=verificationForMode();
+  $('summaryTitle').textContent=`${label} Summary & Conclusion Report`;
+  $('summarySubtitle').textContent='Generated from the selected mode and the current Course / Faculty / Class / Student filters';
+  if(!rows.length||!s.N){
+    $('executiveSummary').textContent='No analyzable Present marks are available for the current mode and filters.';
+    $('summaryVerification').innerHTML='<span class="verifyBad">NO ANALYZABLE DATA</span>';
+    $('summaryFindings').innerHTML='';$('summaryTopGroups').innerHTML='';$('summaryLowGroups').innerHTML='';
+    $('summaryConclusion').textContent='Load the required assessment data or change the active filters to generate a conclusion.';
+    $('summaryRecommendations').textContent='No recommendation is generated without valid Present-student marks.';return;
+  }
+  const uniqueStudents=new Set(rows.map(r=>r.REG_NO)).size,courses=new Set(rows.map(r=>r.COURSE_CODE)).size,faculty=new Set(rows.map(r=>r.ERP_ID||r.FACULTY_NAME)).size,classes=new Set(rows.map(r=>r.CLASS_ID)).size;
+  const presentPct=rows.length?100*s.N/rows.length:0,cv=s.cv??0,sk=skewnessOf(rows),iqr=(s.q3??0)-(s.q1??0);
+  const variability=cv<15?'low':cv<30?'moderate':'high';
+  const skewText=sk===null?'not assessed':Math.abs(sk)<0.5?'approximately symmetric':sk<0?'negatively skewed':'positively skewed';
+  const groups=groupSummary().filter(r=>r.N>0&&r.Mean!==null);const top=groups.slice(0,5),low=[...groups].sort((a,b)=>(a.Mean??999)-(b.Mean??999)).slice(0,5);
+  const g=gradeDist(rows);let failPct=0,upperPct=0;if(g){failPct=100*g.counts.F/g.s.N;upperPct=100*(g.counts.S+g.counts.A)/g.s.N}
+  let combinedText='';let improvePct=null,declinePct=null,comparable=0;
+  if(analysisMode==='combined'){
+    const cmp=rows.filter(r=>r.CAT1_MARK!==null&&r.CAT2_MARK!==null);comparable=cmp.length;const imp=cmp.filter(r=>r.DIFFERENCE>0).length,dec=cmp.filter(r=>r.DIFFERENCE<0).length,same=cmp.filter(r=>r.DIFFERENCE===0).length;improvePct=comparable?100*imp/comparable:0;declinePct=comparable?100*dec/comparable:0;combinedText=` Among ${comparable.toLocaleString()} comparable student-course-class pairs, ${imp.toLocaleString()} improved, ${dec.toLocaleString()} declined and ${same.toLocaleString()} were unchanged from CAT-I to CAT-II.`;
+  }
+  $('executiveSummary').textContent=`${label} analysis contains ${rows.length.toLocaleString()} records representing ${uniqueStudents.toLocaleString()} students across ${courses} courses, ${faculty} faculty and ${classes} classes. Present-student mean is ${f(s.mean)} with median ${f(s.median)} and population SD ${f(s.sd)}. The central 50% of marks lie between Q1 ${f(s.q1)} and Q3 ${f(s.q3)}.${combinedText}`;
+  $('summaryVerification').innerHTML=`<span class="${verify.ok?'verifyGood':'verifyBad'}">${verify.ok?'VERIFIED':'REVIEW REQUIRED'}</span><p class="subcap" style="margin-top:10px">${escapeHtml(verify.details)}</p>`;
+  const findings=[
+    findingCard('Present records',s.N.toLocaleString(),`${presentPct.toFixed(1)}% of current records`),
+    findingCard('Mean / Median',`${f(s.mean)} / ${f(s.median)}`,`Current ${label} scale`),
+    findingCard('Population SD',f(s.sd),`${variability} variability; CV ${f(cv)}%`),
+    findingCard('Q1 - Q3',`${f(s.q1)} - ${f(s.q3)}`,`IQR ${f(iqr)}`),
+    findingCard('Distribution shape',sk===null?'—':f(sk,3),skewText),
+    findingCard('Proposed F share',`${f(failPct)}%`,'Statistical grade scenario only'),
+    findingCard('Proposed S + A share',`${f(upperPct)}%`,'Statistical grade scenario only')
+  ];
+  if(analysisMode==='combined'){findings.push(findingCard('Improved pairs',`${f(improvePct)}%`,`${comparable.toLocaleString()} comparable pairs`),findingCard('Declined pairs',`${f(declinePct)}%`,'CAT-II compared with CAT-I'))}
+  $('summaryFindings').innerHTML=findings.join('');
+  const groupLabel=groupMode==='course'?'Course':groupMode==='faculty'?'Faculty':'Class';
+  const mini=arr=>arr.length?`<table class="miniTable"><thead><tr><th>${groupLabel}</th><th>N</th><th>Mean</th><th>SD</th></tr></thead><tbody>${arr.map(r=>`<tr><td>${escapeHtml(r.Level)}</td><td>${r.N}</td><td>${f(r.Mean)}</td><td>${f(r.SD)}</td></tr>`).join('')}</tbody></table>`:'No groups available.';
+  $('summaryTopGroups').innerHTML=mini(top);$('summaryLowGroups').innerHTML=mini(low);
+  let performanceNote=`The ${label} result is centered at ${f(s.mean)} with median ${f(s.median)}. Score dispersion is ${variability} (CV ${f(cv)}%), and the distribution is ${skewText}.`;
+  if(analysisMode==='combined')performanceNote+=` ${f(improvePct)}% of comparable pairs improved from CAT-I to CAT-II, while ${f(declinePct)}% declined.`;
+  performanceNote+=` The proposed relative-grade distribution places ${f(failPct)}% in F and ${f(upperPct)}% in S/A under the currently configured SD boundaries. These grade levels are analytical scenarios, not official grade decisions.`;
+  $('summaryConclusion').textContent=performanceNote;
+  const notes=[];
+  if(!verify.ok)notes.push('Resolve validation warnings before relying on the analysis for academic decisions.');
+  if(cv>=30)notes.push('The cohort shows high relative variability; inspect course/class distributions and outliers before using mean/SD boundaries.');
+  if(sk!==null&&Math.abs(sk)>=1)notes.push('The marks distribution is strongly skewed; percentile-based review may complement mean/SD grading.');
+  if(analysisMode==='combined')notes.push('Combined results include only students with valid Present marks in both CAT-I and CAT-II and use the configured weights.');
+  notes.push('Faculty/course/class comparisons are descriptive and can be affected by cohort composition, assessment difficulty and class size.');
+  notes.push('Official grades should remain separate from statistical suggestions and require authorized academic review.');
+  $('summaryRecommendations').innerHTML=`<ul class="summaryList">${notes.map(x=>`<li>${escapeHtml(x)}</li>`).join('')}</ul>`;
+  $('summaryStamp').textContent=`Mode: ${label} | Grouping: ${groupLabel} | Active records: ${rows.length.toLocaleString()} | Generated: ${new Date().toLocaleString()}`;
+}
+function downloadSummaryReport(){
+  if(!filteredRows.length){alert('Analyze data first.');return}
+  renderSummaryReport();
+  const label=modeLabel();const body=$('summaryReport').innerHTML;
+  const html=`<!doctype html><html><head><meta charset="utf-8"><title>${label} Summary & Conclusion Report</title><style>body{font-family:Segoe UI,Arial,sans-serif;color:#172033;margin:28px}h1,h2,h3{color:#17345e}.summaryHero,.grid2{display:grid;grid-template-columns:1fr 1fr;gap:12px}.summaryCard,.panel{border:1px solid #dbe3ef;border-radius:10px;padding:14px;margin-bottom:12px}.findingGrid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}.finding{border:1px solid #dbe3ef;border-radius:8px;padding:10px}.finding .t{font-size:12px;color:#667085}.finding .v{font-size:18px;font-weight:700}.verifyGood{color:#14623f;font-weight:700}.verifyBad{color:#9a241d;font-weight:700}.conclusionBox,.recommendBox{padding:12px;border:1px solid #dbe3ef;border-radius:8px;line-height:1.6}.miniTable{width:100%;border-collapse:collapse}.miniTable th,.miniTable td{border-bottom:1px solid #dbe3ef;padding:7px;text-align:left;font-size:12px}.caption{font-size:22px;font-weight:800}.subcap,.reportStamp{color:#667085;font-size:12px;margin-bottom:12px}@media print{body{margin:10mm}.summaryCard,.panel{break-inside:avoid}}</style></head><body>${body}</body></html>`;
+  const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([html],{type:'text/html'}));a.download=`${label.replaceAll(' ','_')}_Summary_Conclusion_Report.html`;a.click();setTimeout(()=>URL.revokeObjectURL(a.href),1000)
+}
+async function analyze(){const files=[...$('files').files];if(!files.length){alert('Select at least one Excel or CSV result file.');return}try{$('analyzeBtn').textContent='Analyzing…';const batches=[];for(const file of files)batches.push(await readFile(file));allRows=batches.flat();cat1=allRows.filter(r=>r.MARK_MODE==='CAT1');cat2=allRows.filter(r=>r.MARK_MODE==='CAT2');otherModes=allRows.filter(r=>r.MARK_MODE!=='CAT1'&&r.MARK_MODE!=='CAT2');$('fileMeta').innerHTML=`${files.length} file(s) — ${allRows.length.toLocaleString()} total rows. CAT1: <b>${cat1.length.toLocaleString()}</b>, CAT2: <b>${cat2.length.toLocaleString()}</b>, Other: <b>${otherModes.length.toLocaleString()}</b>`;$('detectedModes').innerHTML=`<span>CAT1: <b>${cat1.length.toLocaleString()}</b></span><span>CAT2: <b>${cat2.length.toLocaleString()}</b></span><span>Other: <b>${otherModes.length.toLocaleString()}</b></span>`;if(cat1.length&&cat2.length)pairData();else paired=[];if(analysisMode==='cat1'&&!cat1.length){alert('No MARK_MODE=CAT1 rows were found. Choose CAT-II mode or load CAT1 data.')}if(analysisMode==='cat2'&&!cat2.length){alert('No MARK_MODE=CAT2 rows were found. Choose CAT-I mode or load CAT2 data.')}if(analysisMode==='combined'&&(!cat1.length||!cat2.length)){alert('Combined mode requires both MARK_MODE=CAT1 and MARK_MODE=CAT2 rows.')}populateFilters();applyFilters()}catch(e){alert('Unable to analyze: '+e.message)}finally{$('analyzeBtn').textContent='Analyze'}}
+function switchMode(mode){analysisMode=mode;document.querySelectorAll('[data-analysis-mode]').forEach(b=>b.classList.toggle('active',b.dataset.analysisMode===mode));$('combinedControls').classList.toggle('show',mode==='combined');$('modeStatus').textContent=mode==='cat1'?'CAT-I mode':mode==='cat2'?'CAT-II mode':'Combined mode';populateFilters();if((mode==='cat1'&&cat1.length)||(mode==='cat2'&&cat2.length)||(mode==='combined'&&cat1.length&&cat2.length))applyFilters();else{filteredRows=[];renderAll()}}
+function exportCSV(){if(!filteredRows.length){alert('Analyze data first.');return}const cols=Object.keys(filteredRows[0]);const csv=[cols.join(','),...filteredRows.map(r=>cols.map(c=>'"'+String(r[c]??'').replaceAll('"','""')+'"').join(','))].join('\n');const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([csv],{type:'text/csv'}));a.download=`${modeLabel().replaceAll(' ','_')}_analysis.csv`;a.click();setTimeout(()=>URL.revokeObjectURL(a.href),1000)}
+$('analyzeBtn').addEventListener('click',analyze);$('csvBtn').addEventListener('click',exportCSV);$('pdfBtn').addEventListener('click',()=>window.print());$('summaryDownloadBtn').addEventListener('click',downloadSummaryReport);$('gradeBtn').addEventListener('click',renderGrades);['courseFilter','facultyFilter','classFilter'].forEach(id=>$(id).addEventListener('change',applyFilters));$('studentSearch').addEventListener('input',applyFilters);['w1','w2'].forEach(id=>$(id).addEventListener('change',()=>{if(analysisMode==='combined'&&cat1.length&&cat2.length){populateFilters();applyFilters()}}));
+document.querySelectorAll('[data-analysis-mode]').forEach(b=>b.addEventListener('click',()=>switchMode(b.dataset.analysisMode)));
+document.querySelectorAll('.tabbtn').forEach(b=>b.addEventListener('click',()=>{document.querySelectorAll('.tabbtn').forEach(x=>x.classList.remove('active'));b.classList.add('active');document.querySelectorAll('.view').forEach(v=>v.classList.remove('active'));$(b.dataset.view).classList.add('active')}));
+document.querySelectorAll('[data-group]').forEach(b=>b.addEventListener('click',()=>{document.querySelectorAll('[data-group]').forEach(x=>x.classList.remove('active'));b.classList.add('active');groupMode=b.dataset.group;renderAnalysis()}));
+$('toggleAnalysisTable').addEventListener('click',e=>{const p=$('analysisTablePanel');p.classList.toggle('hidden');e.target.textContent=p.classList.contains('hidden')?'Show Table':'Hide Table'});$('toggleAnalysisChart').addEventListener('click',e=>{const p=$('analysisChartPanel');p.classList.toggle('hidden');e.target.textContent=p.classList.contains('hidden')?'Show Chart':'Hide Chart'});
+switchMode('cat1');
+</script>
+</body>
+</html>

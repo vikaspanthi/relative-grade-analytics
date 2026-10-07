@@ -1,0 +1,33 @@
+TESTED SAMPLE: CAT_ANALYSIS_HOD_25-09-2026_0956AM(1).xlsx
+==========================================================
+MARK_MODE detection:
+  CAT1: 5,337 rows
+  CAT2: 0 rows
+
+Records: 5,337
+Unique students: 1,563
+Courses: 21
+Faculty ERP IDs: 159
+Faculty names: 158
+Classes: 222
+
+Status:
+  Present: 5,204
+  Absent: 64
+  Debarred: 69
+
+Present-student marks:
+  Mean: 34.5262
+  Median: 36.0000
+  Population SD: 9.0699
+  Minimum: 0
+  Maximum: 50
+  Zero marks: 21
+  Full marks: 64
+
+Validation:
+  Duplicate Student+Course+Class: 0
+  Invalid marks: 0
+
+The supplied sample contains CAT1 only, so CAT-I Only mode is immediately available.
+CAT-II Only / Combined mode become available when MARK_MODE=CAT2 rows are loaded.
