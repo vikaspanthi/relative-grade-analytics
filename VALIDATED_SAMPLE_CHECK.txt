@@ -1,0 +1,28 @@
+VALIDATED SAMPLE CHECK
+======================
+Test file: CAT_ANALYSIS_HOD_25-09-2026_0956AM(1).xlsx
+MARK_MODE detected: CAT1
+
+Rows: 5,337
+Unique students: 1,563
+Courses: 21
+Faculty ERP IDs: 159
+Classes: 222
+Present: 5,204
+Absent: 64
+Debarred: 69
+Valid Present marks: 5,204
+
+Mean mark: 34.5262 / 50
+Mean normalized score: 69.0525%
+Median: 36.0000
+Population SD: 9.0699
+Sample SD: 9.0708
+P10: 22.0000
+Q1: 29.0000
+Q3: 41.0000
+P90: 45.0000
+Minimum: 0
+Maximum: 50
+
+The application does not hard-code these values. They are included only as a verification reference for the supplied sample.

@@ -14,3 +14,9 @@
   .visibility-toolbar,#toggleVisualsBtn{display:none!important}
   .is-collapsed,.visuals-hidden .chart-panel{display:block!important}
 }
+
+/* Effective visual analytics */
+#visuals .chartbox{height:340px}
+#visuals .panel h3{display:flex;align-items:center;gap:8px}
+#visualValidationBadges span{font-weight:700}
+@media(max-width:900px){#visuals .chartbox{height:300px}}

@@ -69,7 +69,117 @@ function modeLabel(){return analysisMode==='cat1'?'CAT-I':analysisMode==='cat2'?
 function currentRows(){return analysisMode==='cat1'?cat1:analysisMode==='cat2'?cat2:combinedRows()}
 function populateFilters(){const rows=currentRows();for(const [id,field] of [['courseFilter','COURSE_CODE'],['facultyFilter','FACULTY_NAME'],['classFilter','CLASS_ID']]){const el=$(id),old=el.value;el.innerHTML='<option>All</option>';[...new Set(rows.map(r=>String(r[field]??'')).filter(Boolean))].sort().forEach(v=>el.add(new Option(v,v)));if([...el.options].some(o=>o.value===old))el.value=old}}
 function applyFilters(){activeRows=currentRows();const c=$('courseFilter').value,fa=$('facultyFilter').value,cl=$('classFilter').value,q=$('studentSearch').value.trim().toLowerCase();filteredRows=activeRows.filter(r=>(c==='All'||String(r.COURSE_CODE)===c)&&(fa==='All'||String(r.FACULTY_NAME)===fa)&&(cl==='All'||String(r.CLASS_ID)===cl)&&(!q||`${r.REG_NO} ${r.STUDENT_NAME}`.toLowerCase().includes(q)));renderAll()}
-function renderAll(){renderDashboard();renderStudents();renderAnalysis();renderGrades();renderValidation();renderCleaning();renderSummaryReport()}
+
+function normalizedValidValues(rows){
+  return rows.filter(r=>validMark(r)).map(r=>100*n(r.MARK_CONSIDER)/n(r.MAX_MARK)).filter(Number.isFinite);
+}
+function visualValidationSummary(){
+  const rows=filteredRows;
+  if(analysisMode==='combined'){
+    const valid=rows.filter(r=>r.BOTH_PRESENT).length;
+    const incomplete=rows.length-valid;
+    const improved=rows.filter(r=>r.BOTH_PRESENT&&r.DIFFERENCE_PP>0).length;
+    const declined=rows.filter(r=>r.BOTH_PRESENT&&r.DIFFERENCE_PP<0).length;
+    const unchanged=rows.filter(r=>r.BOTH_PRESENT&&r.DIFFERENCE_PP===0).length;
+    return {labels:['Comparable pairs','Not comparable'],values:[valid,incomplete],diagnosticLabels:['Improved','Declined','Unchanged','Not comparable'],diagnosticValues:[improved,declined,unchanged,incomplete],valid,invalid:incomplete};
+  }
+  const st=status(rows);
+  let invalidPresent=0;
+  for(const r of rows) if(isPresent(r)&&!validMark(r)) invalidPresent++;
+  const valid=rows.filter(r=>validMark(r)).length;
+  return {
+    labels:['Valid Present','Invalid/Missing Present','Absent','Debarred','Other'],
+    values:[valid,invalidPresent,st.Absent||0,st.Debarred||0,st.Other||0],
+    valid,invalid:invalidPresent
+  };
+}
+function renderVisualAnalytics(){
+  const label=modeLabel(),s=stats(filteredRows),vals=normalizedValidValues(filteredRows);
+  $('visualTitle').textContent=`${label} Effective Visual Analytics`;
+  $('visualSubcap').textContent=`Validated results for the current filters. ${s.N||0} valid Present/comparable records are used in score graphs.`;
+
+  // Validation status badges
+  const q=visualValidationSummary();
+  const verified=q.invalid===0 && s.N>0;
+  $('visualValidationBadges').innerHTML=
+    `<span class="${verified?'good':'bad'}">Graph data: ${verified?'VERIFIED':'REVIEW REQUIRED'}</span>`+
+    `<span>Valid analytical N: <b>${s.N||0}</b></span>`+
+    `<span>Rows in view: <b>${filteredRows.length}</b></span>`;
+
+  // Percentile and quartile profile
+  const pctLabels=['P10','Q1','Median','Q3','P90'];
+  const pctValues=[s.p10Pct,s.q1Pct,s.medianPct,s.q3Pct,s.p90Pct].map(v=>Number.isFinite(v)?v:0);
+  chart('percentile','percentileChart',{
+    type:'line',
+    data:{labels:pctLabels,datasets:[{label:`${label} normalized score %`,data:pctValues,fill:false,tension:.2,pointRadius:5,pointHoverRadius:7}]},
+    options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:true}},scales:{y:{min:0,max:100,title:{display:true,text:'Normalized score (%)'}}}}
+  });
+
+  // Performance bands
+  const bands=[
+    {label:'0-<20%',lo:0,hi:20},{label:'20-<40%',lo:20,hi:40},{label:'40-<60%',lo:40,hi:60},
+    {label:'60-<70%',lo:60,hi:70},{label:'70-<80%',lo:70,hi:80},{label:'80-<90%',lo:80,hi:90},{label:'90-100%',lo:90,hi:100.000001}
+  ];
+  const bandCounts=bands.map(b=>vals.filter(v=>v>=b.lo&&v<b.hi).length);
+  chart('bands','bandChart',{
+    type:'bar',
+    data:{labels:bands.map(b=>b.label),datasets:[{label:'Valid Present records',data:bandCounts}]},
+    options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{y:{beginAtZero:true,title:{display:true,text:'Number of records'}},x:{title:{display:true,text:'Normalized performance band'}}}}
+  });
+
+  // Validated data quality
+  chart('quality','qualityChart',{
+    type:'doughnut',
+    data:{labels:q.labels,datasets:[{data:q.values}]},
+    options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{position:'bottom'}}}
+  });
+
+  // Statistical / pair diagnostics
+  let diagLabels=[],diagValues=[];
+  if(analysisMode==='combined'){
+    diagLabels=q.diagnosticLabels; diagValues=q.diagnosticValues;
+  }else{
+    const v=validate(filteredRows,label);
+    diagLabels=['Tukey outliers','Zero marks','Full marks','Invalid marks','Missing Present marks','Duplicate keys'];
+    diagValues=[s.outliers||0,v.zero||0,v.full||0,v.invalid||0,v.missing||0,v.dup||0];
+  }
+  chart('diagnostic','diagnosticChart',{
+    type:'bar',
+    data:{labels:diagLabels,datasets:[{label:'Count',data:diagValues}]},
+    options:{responsive:true,maintainAspectRatio:false,indexAxis:'y',plugins:{legend:{display:false}},scales:{x:{beginAtZero:true,title:{display:true,text:'Count'}}}}
+  });
+
+  // Group comparisons
+  const groups=groupSummary().filter(r=>r.N>0).slice(0,12);
+  const gtitle=groupMode==='course'?'Course':groupMode==='faculty'?'Faculty':'Class';
+  $('groupCompareTitle').textContent=`Top ${gtitle}s: Mean vs Median %`;
+  $('rangeTitle').textContent=`${gtitle} Central 50% Range (Q1-Q3)`;
+  const short=x=>String(x).length>28?String(x).slice(0,28)+'…':String(x);
+
+  chart('groupCompare','groupCompareChart',{
+    type:'bar',
+    data:{labels:groups.map(r=>short(r.Level)),datasets:[
+      {label:'Mean %',data:groups.map(r=>Number.isFinite(r.MeanPct)?r.MeanPct:0)},
+      {label:'Median %',data:groups.map(r=>Number.isFinite(r.MedianPct)?r.MedianPct:0)}
+    ]},
+    options:{responsive:true,maintainAspectRatio:false,indexAxis:'y',scales:{x:{min:0,max:100,title:{display:true,text:'Normalized score (%)'}}}}
+  });
+
+  // Floating horizontal bars from Q1 to Q3
+  chart('range','rangeChart',{
+    type:'bar',
+    data:{labels:groups.map(r=>short(r.Level)),datasets:[{
+      label:'Q1-Q3 normalized %',
+      data:groups.map(r=>[
+        Number.isFinite(r.Q1Pct)?r.Q1Pct:0,
+        Number.isFinite(r.Q3Pct)?r.Q3Pct:0
+      ])
+    }]},
+    options:{responsive:true,maintainAspectRatio:false,indexAxis:'y',scales:{x:{min:0,max:100,title:{display:true,text:'Normalized score (%)'}}}}
+  });
+}
+function renderAll(){renderDashboard();renderVisualAnalytics();renderStudents();renderAnalysis();renderGrades();renderValidation();renderCleaning();renderSummaryReport()}
+
 function kpi(label,value,desc=''){return`<div class="kpi" title="${escapeHtml(desc||metricHelp[label]||'')}"><div class="label">${escapeHtml(label)}</div><div class="value">${escapeHtml(value)}</div><div class="desc">${escapeHtml(desc||metricHelp[label]||'')}</div></div>`}
 function renderDashboard(){const label=modeLabel(),s=stats(filteredRows),st=status(filteredRows),facultyCount=new Set(filteredRows.map(r=>r.ERP_ID||r.FACULTY_NAME).filter(Boolean)).size;$('dashboardCaption').textContent=`${label} Dashboard Results`;$('dashboardSubcap').textContent='All statistics use valid Present marks only; normalized percentages are used when scale comparability matters.';const cards=[['Records',filteredRows.length.toLocaleString(),'Rows after cleaning and current filters.'],['Valid Present N',s.N.toLocaleString()],['Unique Students',new Set(filteredRows.map(r=>r.REG_NO).filter(Boolean)).size.toLocaleString()],['Mean',f(s.mean)],['Mean %',f(s.meanPct)+'%'],['Median',f(s.median)],['Mode',s.mode],['Population SD',f(s.sd)],['Sample SD',f(s.sampleSd)],['Variance',f(s.variance)],['CV %',f(s.cv)+'%'],['P10',f(s.p10)],['Q1',f(s.q1)],['Q3',f(s.q3)],['P90',f(s.p90)],['IQR',f(s.iqr)],['Minimum',f(s.min)],['Maximum',f(s.max)],['Range',f(s.range)],['Skewness',f(s.skew,3)],['Excess Kurtosis',f(s.kurtosis,3)],['Outliers',String(s.outliers)],['Courses',String(new Set(filteredRows.map(r=>r.COURSE_CODE).filter(Boolean)).size)],['Faculty',String(facultyCount)],['Classes',String(new Set(filteredRows.map(r=>r.CLASS_ID).filter(Boolean)).size)]];$('kpis').innerHTML=cards.map(x=>kpi(x[0],x[1],x[2]||'')).join('');$('summaryChartCaption').textContent=`${label} Statistical Summary`;$('statusChartCaption').textContent=`${label} Student Status`;$('histCaption').textContent=`${label} Normalized Score Distribution (%)`;
 chart('summary','summaryChart',{type:'bar',data:{labels:['Mean %','Median %','P10 %','Q1 %','Q3 %','P90 %'],datasets:[{label:label,data:[s.meanPct||0,s.medianPct||0,s.p10Pct||0,s.q1Pct||0,s.q3Pct||0,s.p90Pct||0]}]},options:{responsive:true,maintainAspectRatio:false,plugins:{tooltip:{callbacks:{afterLabel:()=> 'Normalized percentage view'}}}}});
@@ -78,7 +188,7 @@ const vals=filteredRows.filter(r=>validMark(r)).map(r=>100*n(r.MARK_CONSIDER)/n(
 const combined=analysisMode==='combined';$('changePanel').classList.toggle('hidden',!combined);$('scatterPanel').classList.toggle('hidden',!combined);if(combined){const cmp=filteredRows.filter(r=>r.BOTH_PRESENT),chg={Improved:0,Declined:0,'No change':0};cmp.forEach(r=>chg[r.CHANGE]++);chart('change','changeChart',{type:'bar',data:{labels:Object.keys(chg),datasets:[{label:'Matched pairs',data:Object.values(chg)}]},options:{responsive:true,maintainAspectRatio:false}});chart('scatter','scatterChart',{type:'scatter',data:{datasets:[{label:'Matched student-course-class pairs',data:cmp.slice(0,2500).map(r=>({x:r.CAT1_PCT,y:r.CAT2_PCT}))},{label:'Equal performance line',type:'line',data:[{x:0,y:0},{x:100,y:100}],pointRadius:0,borderWidth:1}]},options:{responsive:true,maintainAspectRatio:false,scales:{x:{min:0,max:100,title:{display:true,text:'CAT-I %'}},y:{min:0,max:100,title:{display:true,text:'CAT-II %'}}}}})}}
 function percentRankMap(rows){const vals=rows.filter(r=>validMark(r)).map(r=>100*n(r.MARK_CONSIDER)/n(r.MAX_MARK)).sort((a,b)=>a-b);const map=new Map();for(const v of new Set(vals)){const less=vals.filter(x=>x<v).length,equal=vals.filter(x=>x===v).length;map.set(v,vals.length?100*(less+(equal+1)/2)/vals.length:null)}return map}
 function renderStudents(){const label=modeLabel();$('studentTitle').textContent=`${label} Student Result Details`;$('studentCaption').textContent=`Showing ${filteredRows.length.toLocaleString()} cleaned/filtered result rows. Hover table headings for definitions.`;if(analysisMode==='combined'){$('studentTable').innerHTML=table(filteredRows.slice(0,2500),[['REG_NO','Reg No'],['STUDENT_NAME','Student'],['COURSE_CODE','Course'],['CLASS_ID','Class'],['FACULTY_NAME','Faculty'],['CAT1_STATUS','CAT-I Status'],['CAT1_MARK','CAT-I Mark',r=>f(r.CAT1_MARK)],['CAT1_PCT','CAT-I %',r=>f(r.CAT1_PCT)],['CAT2_STATUS','CAT-II Status'],['CAT2_MARK','CAT-II Mark',r=>f(r.CAT2_MARK)],['CAT2_PCT','CAT-II %',r=>f(r.CAT2_PCT)],['DIFFERENCE_PP','Difference (pp)',r=>f(r.DIFFERENCE_PP)],['CHANGE','Change'],['COMBINED_SCORE','Combined %',r=>f(r.COMBINED_SCORE)],['PAIR_STATUS','Pair Quality']])}else{const ranks=percentRankMap(filteredRows),s=stats(filteredRows);$('studentTable').innerHTML=table(filteredRows.slice(0,2500),[['REG_NO','Reg No'],['STUDENT_NAME','Student'],['COURSE_CODE','Course'],['TITLE','Title'],['CLASS_ID','Class'],['FACULTY_NAME','Faculty'],['MARK_MODE','Mark Mode'],['STUDENT_STATUS','Status'],['MARK_CONSIDER','Marks',r=>f(n(r.MARK_CONSIDER))],['MAX_MARK','Max',r=>f(n(r.MAX_MARK),0)],['ScorePct','Score %',r=>validMark(r)?f(100*n(r.MARK_CONSIDER)/n(r.MAX_MARK)):'—'],['Percentile','Percentile',r=>validMark(r)?f(ranks.get(100*n(r.MARK_CONSIDER)/n(r.MAX_MARK))):'—'],['Z','Z-score',r=>{if(!validMark(r)||!s.sdPct)return'—';const pct=100*n(r.MARK_CONSIDER)/n(r.MAX_MARK);return f((pct-s.meanPct)/s.sdPct)}],['_QUALITY_FLAG','Quality Flag']])}}
-function groupSummary(){const map=new Map();for(const r of filteredRows){const k=groupMode==='course'?`${r.COURSE_CODE} | ${r.TITLE}`:groupMode==='faculty'?`${r.ERP_ID||''} | ${r.FACULTY_NAME}`:String(r.CLASS_ID);if(!map.has(k))map.set(k,[]);map.get(k).push(r)}const out=[];for(const [level,rows] of map){const s=stats(rows),st=status(rows);const item={Level:level,N:s.N,Mean:s.mean,MeanPct:s.meanPct,Median:s.median,SD:s.sd,SampleSD:s.sampleSd,CV:s.cv,Min:s.min,Max:s.max,Q1:s.q1,Q3:s.q3,IQR:s.iqr,Outliers:s.outliers,Present:st.Present,Absent:st.Absent,Debarred:st.Debarred};if(analysisMode==='combined'){const cmp=rows.filter(r=>r.BOTH_PRESENT);item.Improved=cmp.filter(r=>r.DIFFERENCE_PP>0).length;item.Declined=cmp.filter(r=>r.DIFFERENCE_PP<0).length}out.push(item)}return out.sort((a,b)=>(b.MeanPct??-999)-(a.MeanPct??-999))}
+function groupSummary(){const map=new Map();for(const r of filteredRows){const k=groupMode==='course'?`${r.COURSE_CODE} | ${r.TITLE}`:groupMode==='faculty'?`${r.ERP_ID||''} | ${r.FACULTY_NAME}`:String(r.CLASS_ID);if(!map.has(k))map.set(k,[]);map.get(k).push(r)}const out=[];for(const [level,rows] of map){const s=stats(rows),st=status(rows);const item={Level:level,N:s.N,Mean:s.mean,MeanPct:s.meanPct,Median:s.median,MedianPct:s.medianPct,SD:s.sd,SDPct:s.sdPct,SampleSD:s.sampleSd,CV:s.cv,Min:s.min,Max:s.max,Q1:s.q1,Q3:s.q3,Q1Pct:s.q1Pct,Q3Pct:s.q3Pct,IQR:s.iqr,IQRPct:s.iqrPct,Outliers:s.outliers,Present:st.Present,Absent:st.Absent,Debarred:st.Debarred};if(analysisMode==='combined'){const cmp=rows.filter(r=>r.BOTH_PRESENT);item.Improved=cmp.filter(r=>r.DIFFERENCE_PP>0).length;item.Declined=cmp.filter(r=>r.DIFFERENCE_PP<0).length}out.push(item)}return out.sort((a,b)=>(b.MeanPct??-999)-(a.MeanPct??-999))}
 function renderAnalysis(){const label=modeLabel(),title=groupMode[0].toUpperCase()+groupMode.slice(1),rows=groupSummary();$('analysisPageCaption').textContent=`${label} Result Analysis`;$('analysisCaption').textContent=`${title}-wise ${label} Result Analysis`;$('analysisGraphCaption').textContent=`${title}-wise ${label} Mean Normalized Score (%)`;const cols=[['Level',title],['N','Valid Present N'],['Mean','Mean',r=>f(r.Mean)],['MeanPct','Mean %',r=>f(r.MeanPct)+'%'],['Median','Median',r=>f(r.Median)],['SD','Population SD',r=>f(r.SD)],['SampleSD','Sample SD',r=>f(r.SampleSD)],['CV','CV %',r=>f(r.CV)+'%'],['Q1','Q1',r=>f(r.Q1)],['Q3','Q3',r=>f(r.Q3)],['IQR','IQR',r=>f(r.IQR)],['Min','Minimum',r=>f(r.Min)],['Max','Maximum',r=>f(r.Max)],['Outliers','Outliers'],['Present','Present'],['Absent','Absent'],['Debarred','Debarred']];if(analysisMode==='combined')cols.push(['Improved','Improved'],['Declined','Declined']);$('analysisTable').innerHTML=table(rows,cols);const top=rows.filter(r=>r.N>0).slice(0,15);chart('analysis','analysisChart',{type:'bar',data:{labels:top.map(r=>r.Level.length>32?r.Level.slice(0,32)+'…':r.Level),datasets:[{label:`${label} Mean %`,data:top.map(r=>r.MeanPct||0)}]},options:{responsive:true,maintainAspectRatio:false,indexAxis:'y',scales:{x:{min:0,max:100,title:{display:true,text:'Mean normalized score (%)'}}}}})}
 function gradeDist(rows){const vals=rows.filter(r=>validMark(r)).map(r=>100*n(r.MARK_CONSIDER)/n(r.MAX_MARK));const s=basicStats(vals);if(!s.N)return null;const mul={S:+$('gS').value,A:+$('gA').value,B:+$('gB').value,D:+$('gD').value,E:+$('gE').value},verified=Number.isFinite(mul.S)&&Number.isFinite(mul.A)&&Number.isFinite(mul.B)&&Number.isFinite(mul.D)&&Number.isFinite(mul.E)&&mul.S>mul.A&&mul.A>mul.B&&mul.B>0&&mul.D<0&&mul.E<mul.D;const b={S:s.mean+mul.S*s.sd,A:s.mean+mul.A*s.sd,B:s.mean+mul.B*s.sd,C:s.mean,D:s.mean+mul.D*s.sd,E:s.mean+mul.E*s.sd};const counts={S:0,A:0,B:0,C:0,D:0,E:0,F:0};for(const v of vals){let g='F';for(const k of ['S','A','B','C','D','E'])if(v>=b[k]){g=k;break}counts[g]++}return{s,b,counts,mul,verified}}
 function renderGrades(){const label=modeLabel();$('gradeTitle').textContent=`${label} Grade Levels Result`;const g=gradeDist(filteredRows);if(!g){$('gradeTable').innerHTML='<div style="padding:12px">No valid Present marks available.</div>';$('gradeSummary').innerHTML='';return}const grades=['S','A','B','C','D','E','F'];$('gradeSummary').innerHTML=`<span>Mode <b>${label}</b></span><span>N <b>${g.s.N}</b></span><span>Mean % <b>${f(g.s.mean)}</b></span><span>SD % <b>${f(g.s.sd)}</b></span><span class="${g.verified?'good':'bad'}">Boundaries <b>${g.verified?'VERIFIED':'CHECK MULTIPLIERS'}</b></span>`;const rows=grades.map(x=>({Grade:x,Formula:x==='F'?'< E lower boundary':x==='C'?'Mean':`Mean + ${x==='S'?g.mul.S:x==='A'?g.mul.A:x==='B'?g.mul.B:x==='D'?g.mul.D:g.mul.E} × SD`,Lower:x==='F'?`< ${f(g.b.E)}%`:f(g.b[x])+'%',Students:g.counts[x],Percentage:f(100*g.counts[x]/g.s.N)+'%'}));$('gradeTable').innerHTML=table(rows,[['Grade','Grade'],['Formula','Formula'],['Lower','Grade Boundary'],['Students','Students'],['Percentage','Percentage']]);chart('grade','gradeChart',{type:'bar',data:{labels:grades,datasets:[{label:`${label} proposed grade count`,data:grades.map(x=>g.counts[x])}]},options:{responsive:true,maintainAspectRatio:false}})}
@@ -150,6 +260,12 @@ function exportPdfReport(){
     doc.addPage('a4','landscape');title('Graphical Result Analysis',15,16);doc.setFontSize(8);doc.setTextColor(...muted);doc.text(`${label} | Current filters applied`,ml,21);doc.setTextColor(...ink);
     addCanvas('summaryChart',ml,27,128,68);addCanvas('statusChart',153,27,132,68);doc.setFontSize(9);doc.text('Statistical Summary',ml,101);doc.text('Student Status',153,101);
     addCanvas('histChart',ml,108,128,68);addCanvas('analysisChart',153,108,132,68);doc.text('Normalized Score Distribution (%)',ml,182);doc.text(`${groupMode[0].toUpperCase()+groupMode.slice(1)}-wise Mean Normalized Score (%)`,153,182,{maxWidth:132});
+    doc.addPage('a4','landscape');title('Effective Visual Analytics',15,16);
+    addCanvas('percentileChart',ml,27,128,68);addCanvas('bandChart',153,27,132,68);
+    doc.setFontSize(9);doc.text('Percentile & Quartile Profile',ml,101);doc.text('Performance Band Distribution',153,101);
+    addCanvas('qualityChart',ml,108,128,68);addCanvas('groupCompareChart',153,108,132,68);
+    doc.text('Validated Data Quality',ml,182);doc.text('Group Mean vs Median (%)',153,182);
+
 
     // Analysis table page(s)
     doc.addPage('a4','landscape');title(`${groupMode[0].toUpperCase()+groupMode.slice(1)}-wise Result Analysis`,15,16);

@@ -28,6 +28,7 @@
 </div>
 <div class="tabs noprint" id="tabs">
   <button class="tabbtn active" data-view="dashboard">Dashboard</button>
+  <button class="tabbtn" data-view="visuals">Visual Analytics</button>
   <button class="tabbtn" data-view="analysis">Analysis</button>
   <button class="tabbtn" data-view="students">Students</button>
   <button class="tabbtn" data-view="grades">Grade Levels</button>
@@ -72,6 +73,60 @@
       <div class="panel chart-panel" id="changePanel"><h3>Combined Student Change</h3><div class="chartbox"><canvas id="changeChart"></canvas></div></div>
     </div>
     <div class="panel chart-panel" id="scatterPanel"><h3>CAT-I vs CAT-II Scatter Plot</h3><div class="subcap">Only available in Combined mode. Above the diagonal indicates CAT-II improvement.</div><div class="chartbox"><canvas id="scatterChart"></canvas></div></div>
+  </section>
+
+
+  <section id="visuals" class="view">
+    <div class="caption" id="visualTitle">Effective Visual Analytics</div>
+    <div class="subcap" id="visualSubcap">Validated Present marks only; all score comparisons use normalized percentages where appropriate.</div>
+    <div class="statusline" id="visualValidationBadges"></div>
+    <div class="visibility-toolbar noprint">
+      <button class="lightbtn" data-toggle-target="percentilePanel" data-hide-label="Hide Percentiles" data-show-label="Show Percentiles">Hide Percentiles</button>
+      <button class="lightbtn" data-toggle-target="bandPanel" data-hide-label="Hide Bands" data-show-label="Show Bands">Hide Bands</button>
+      <button class="lightbtn" data-toggle-target="qualityChartPanel" data-hide-label="Hide Validation Graph" data-show-label="Show Validation Graph">Hide Validation Graph</button>
+      <button class="lightbtn" data-toggle-target="groupComparePanel" data-hide-label="Hide Group Comparison" data-show-label="Show Group Comparison">Hide Group Comparison</button>
+      <button class="lightbtn" data-toggle-target="rangePanel" data-hide-label="Hide Quartile Ranges" data-show-label="Show Quartile Ranges">Hide Quartile Ranges</button>
+      <button class="lightbtn" data-toggle-target="diagnosticPanel" data-hide-label="Hide Diagnostics" data-show-label="Show Diagnostics">Hide Diagnostics</button>
+    </div>
+
+    <div class="grid2">
+      <div class="panel chart-panel" id="percentilePanel">
+        <h3>Percentile & Quartile Profile</h3>
+        <div class="subcap">P10, Q1, Median, Q3 and P90 on normalized percentage scale.</div>
+        <div class="chartbox"><canvas id="percentileChart"></canvas></div>
+      </div>
+      <div class="panel chart-panel" id="bandPanel">
+        <h3>Performance Band Distribution</h3>
+        <div class="subcap">Valid Present records grouped into normalized percentage bands.</div>
+        <div class="chartbox"><canvas id="bandChart"></canvas></div>
+      </div>
+    </div>
+
+    <div class="grid2">
+      <div class="panel chart-panel" id="qualityChartPanel">
+        <h3>Validated Data Quality</h3>
+        <div class="subcap">Valid comparable records versus status/validation exclusions.</div>
+        <div class="chartbox"><canvas id="qualityChart"></canvas></div>
+      </div>
+      <div class="panel chart-panel" id="diagnosticPanel">
+        <h3>Statistical Diagnostics</h3>
+        <div class="subcap">Review-oriented counts. Outliers are statistical flags, not automatic data errors.</div>
+        <div class="chartbox"><canvas id="diagnosticChart"></canvas></div>
+      </div>
+    </div>
+
+    <div class="grid2">
+      <div class="panel chart-panel" id="groupComparePanel">
+        <h3 id="groupCompareTitle">Top Groups: Mean vs Median %</h3>
+        <div class="subcap">Top groups ranked by mean normalized score; minimum one valid Present record.</div>
+        <div class="chartbox"><canvas id="groupCompareChart"></canvas></div>
+      </div>
+      <div class="panel chart-panel" id="rangePanel">
+        <h3 id="rangeTitle">Group Central 50% Range (Q1-Q3)</h3>
+        <div class="subcap">Floating bars show the central 50% of normalized scores for each group.</div>
+        <div class="chartbox"><canvas id="rangeChart"></canvas></div>
+      </div>
+    </div>
   </section>
 
   <section id="analysis" class="view">
