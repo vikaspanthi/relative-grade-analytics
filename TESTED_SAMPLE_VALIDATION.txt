@@ -1,0 +1,40 @@
+TESTED SAMPLE: CAT_ANALYSIS_HOD_25-09-2026_0956AM.xlsx
+======================================================
+Rows: 5,337
+MARK_MODE: CAT1 = 5,337; CAT2 = 0
+Unique students: 1,563
+Courses: 21
+Faculty ERP/name groups: 159
+Classes: 222
+Status: Present 5,204; Absent 64; Debarred 69
+Exact duplicate rows: 0
+Duplicate MARK_MODE+Student+Course+Class keys: 0
+Invalid marks: 0
+Missing Present marks: 0
+Required-field completeness: 100%
+
+VALID PRESENT MARK STATISTICS
+N: 5,204
+Mean: 34.5262
+Mean normalized score: 69.0525%
+Median: 36.0000
+Mode: 40 (frequency 298)
+Population SD: 9.0699
+Sample SD: 9.0708
+Population variance: 82.2628
+CV: 26.2695%
+P10: 22
+Q1: 29
+Q3: 41
+P90: 45
+IQR: 12
+Minimum: 0
+Maximum: 50
+Range: 50
+Adjusted skewness: -0.8670
+Bias-adjusted excess kurtosis: 0.9833
+Tukey outliers: 107
+Present zero marks: 21
+Present full marks: 64
+
+These values were used to verify the calculation logic in the HTML application.
