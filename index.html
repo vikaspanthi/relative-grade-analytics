@@ -1,205 +1,24 @@
-<!doctype html>
-<html lang="en">
-<head>
-<meta charset="utf-8">
-<meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Relative Grade Analytics - MARK_MODE Based CAT Analysis</title>
-<script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.4/dist/chart.umd.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/jspdf-autotable@3.8.4/dist/jspdf.plugin.autotable.min.js"></script>
-<link rel="stylesheet" href="styles.css">
-</head>
-<body>
-<div class="top">
-  <div class="brand">Relative Grade Analytics<small>MARK_MODE based CAT-I, CAT-II and Combined result analysis</small></div>
-  <button class="action" id="analyzeBtn">Analyze</button>
-  <button class="action" id="csvBtn">Export CSV</button>
-  <button class="action" id="pdfBtn">Download PDF Report</button>
-  <button class="action" id="summaryDownloadBtn">Download Summary</button>
-  <button class="action" id="toggleVisualsBtn">Hide Charts</button>
-</div>
-<div class="modebar noprint">
-  <strong>Analysis Mode:</strong>
-  <button class="modebtn active" data-analysis-mode="cat1">CAT-I Only</button>
-  <button class="modebtn" data-analysis-mode="cat2">CAT-II Only</button>
-  <button class="modebtn" data-analysis-mode="combined">Combined CAT-I + CAT-II</button>
-  <span class="badge" id="modeStatus">CAT-I mode</span>
-</div>
-<div class="tabs noprint" id="tabs">
-  <button class="tabbtn active" data-view="dashboard">Dashboard</button>
-  <button class="tabbtn" data-view="visuals">Visual Analytics</button>
-  <button class="tabbtn" data-view="analysis">Analysis</button>
-  <button class="tabbtn" data-view="students">Students</button>
-  <button class="tabbtn" data-view="grades">Grade Levels</button>
-  <button class="tabbtn" data-view="validation">Validation</button>
-  <button class="tabbtn" data-view="cleaning">Data Description</button>
-  <button class="tabbtn" data-view="summaryReport">Summary & Conclusion</button>
-</div>
-<div class="wrap">
-  <div class="uploadgrid noprint">
-    <div class="uploadcard"><h3>Result Excel / CSV file(s)</h3><div class="filebox"><input id="files" type="file" multiple accept=".xlsx,.xls,.csv"></div><div class="meta" id="fileMeta">Select one file containing CAT1/CAT2 rows, or select multiple same-format files. Assessment type is detected from <b>MARK_MODE</b>.</div></div>
-    <div class="uploadcard"><h3>Detected MARK_MODE</h3><div class="statusline" id="detectedModes"><span>CAT1: 0</span><span>CAT2: 0</span></div><div class="meta">Recognized values include CAT1 / CAT-I / CAT 1 and CAT2 / CAT-II / CAT 2. Unsupported values are reported under Validation.</div></div>
-  </div>
-  <div class="notice noprint"><b>Automatic assessment identification:</b> The application uses <code>MARK_MODE</code>. Rows with CAT1 are used for CAT-I analysis; rows with CAT2 are used for CAT-II analysis. Combined mode matches the same <code>REG_NO + COURSE_CODE + CLASS_ID</code>.</div>
-  <div class="combinedControls noprint" id="combinedControls">
-    <strong>Combined score weights</strong>
-    <label>CAT-I %<input id="w1" type="number" min="0" max="100" step="5" value="50"></label>
-    <label>CAT-II %<input id="w2" type="number" min="0" max="100" step="5" value="50"></label>
-    <span class="badge">Combined score is normalized to 100 using each CAT's MAX_MARK.</span>
-  </div>
-  <div class="filters noprint">
-    <label>Course<select id="courseFilter"><option>All</option></select></label>
-    <label>Faculty<select id="facultyFilter"><option>All</option></select></label>
-    <label>Class ID<select id="classFilter"><option>All</option></select></label>
-    <label>Student search<input id="studentSearch" placeholder="Reg no / name"></label>
-  </div>
-
-  <section id="dashboard" class="view active">
-    <div class="caption" id="dashboardCaption">CAT-I Dashboard Results</div><div class="subcap" id="dashboardSubcap">Present-student statistics and graphical result analysis</div>
-    <div class="visibility-toolbar noprint">
-      <button class="lightbtn" data-toggle-target="kpis" data-hide-label="Hide Summary" data-show-label="Show Summary">Hide Summary</button>
-      <button class="lightbtn" data-toggle-target="summaryPanel" data-hide-label="Hide Summary Chart" data-show-label="Show Summary Chart">Hide Summary Chart</button>
-      <button class="lightbtn" data-toggle-target="statusPanel" data-hide-label="Hide Status Chart" data-show-label="Show Status Chart">Hide Status Chart</button>
-      <button class="lightbtn" data-toggle-target="histPanel" data-hide-label="Hide Distribution" data-show-label="Show Distribution">Hide Distribution</button>
-    </div>
-    <div class="kpigrid data-panel" id="kpis"></div>
-    <div class="grid2">
-      <div class="panel chart-panel" id="summaryPanel"><h3 id="summaryChartCaption">Statistical Summary</h3><div class="chartbox"><canvas id="summaryChart"></canvas></div></div>
-      <div class="panel chart-panel" id="statusPanel"><h3 id="statusChartCaption">Student Status</h3><div class="chartbox"><canvas id="statusChart"></canvas></div></div>
-    </div>
-    <div class="grid2">
-      <div class="panel chart-panel" id="histPanel"><h3 id="histCaption">Marks Distribution</h3><div class="chartbox"><canvas id="histChart"></canvas></div></div>
-      <div class="panel chart-panel" id="changePanel"><h3>Combined Student Change</h3><div class="chartbox"><canvas id="changeChart"></canvas></div></div>
-    </div>
-    <div class="panel chart-panel" id="scatterPanel"><h3>CAT-I vs CAT-II Scatter Plot</h3><div class="subcap">Only available in Combined mode. Above the diagonal indicates CAT-II improvement.</div><div class="chartbox"><canvas id="scatterChart"></canvas></div></div>
-  </section>
-
-
-  <section id="visuals" class="view">
-    <div class="caption" id="visualTitle">Effective Visual Analytics</div>
-    <div class="subcap" id="visualSubcap">Validated Present marks only; all score comparisons use normalized percentages where appropriate.</div>
-    <div class="statusline" id="visualValidationBadges"></div>
-    <div class="visibility-toolbar noprint">
-      <button class="lightbtn" data-toggle-target="percentilePanel" data-hide-label="Hide Percentiles" data-show-label="Show Percentiles">Hide Percentiles</button>
-      <button class="lightbtn" data-toggle-target="bandPanel" data-hide-label="Hide Bands" data-show-label="Show Bands">Hide Bands</button>
-      <button class="lightbtn" data-toggle-target="qualityChartPanel" data-hide-label="Hide Validation Graph" data-show-label="Show Validation Graph">Hide Validation Graph</button>
-      <button class="lightbtn" data-toggle-target="groupComparePanel" data-hide-label="Hide Group Comparison" data-show-label="Show Group Comparison">Hide Group Comparison</button>
-      <button class="lightbtn" data-toggle-target="rangePanel" data-hide-label="Hide Quartile Ranges" data-show-label="Show Quartile Ranges">Hide Quartile Ranges</button>
-      <button class="lightbtn" data-toggle-target="diagnosticPanel" data-hide-label="Hide Diagnostics" data-show-label="Show Diagnostics">Hide Diagnostics</button>
-    </div>
-
-    <div class="grid2">
-      <div class="panel chart-panel" id="percentilePanel">
-        <h3>Percentile & Quartile Profile</h3>
-        <div class="subcap">P10, Q1, Median, Q3 and P90 on normalized percentage scale.</div>
-        <div class="chartbox"><canvas id="percentileChart"></canvas></div>
-      </div>
-      <div class="panel chart-panel" id="bandPanel">
-        <h3>Performance Band Distribution</h3>
-        <div class="subcap">Valid Present records grouped into normalized percentage bands.</div>
-        <div class="chartbox"><canvas id="bandChart"></canvas></div>
-      </div>
-    </div>
-
-    <div class="grid2">
-      <div class="panel chart-panel" id="qualityChartPanel">
-        <h3>Validated Data Quality</h3>
-        <div class="subcap">Valid comparable records versus status/validation exclusions.</div>
-        <div class="chartbox"><canvas id="qualityChart"></canvas></div>
-      </div>
-      <div class="panel chart-panel" id="diagnosticPanel">
-        <h3>Statistical Diagnostics</h3>
-        <div class="subcap">Review-oriented counts. Outliers are statistical flags, not automatic data errors.</div>
-        <div class="chartbox"><canvas id="diagnosticChart"></canvas></div>
-      </div>
-    </div>
-
-    <div class="grid2">
-      <div class="panel chart-panel" id="groupComparePanel">
-        <h3 id="groupCompareTitle">Top Groups: Mean vs Median %</h3>
-        <div class="subcap">Top groups ranked by mean normalized score; minimum one valid Present record.</div>
-        <div class="chartbox"><canvas id="groupCompareChart"></canvas></div>
-      </div>
-      <div class="panel chart-panel" id="rangePanel">
-        <h3 id="rangeTitle">Group Central 50% Range (Q1-Q3)</h3>
-        <div class="subcap">Floating bars show the central 50% of normalized scores for each group.</div>
-        <div class="chartbox"><canvas id="rangeChart"></canvas></div>
-      </div>
-    </div>
-  </section>
-
-  <section id="analysis" class="view">
-    <div class="caption" id="analysisPageCaption">CAT-I Result Analysis</div><div class="subcap">Analyze by course, faculty or class</div>
-    <div class="toolbar noprint"><button class="lightbtn active" data-group="course">Course Analysis</button><button class="lightbtn" data-group="faculty">Faculty Analysis</button><button class="lightbtn" data-group="class">Class Analysis</button><button class="lightbtn" id="toggleAnalysisTable">Hide Table</button><button class="lightbtn" id="toggleAnalysisChart">Hide Chart</button></div>
-    <div class="panel data-panel" id="analysisTablePanel"><h3 id="analysisCaption">Course-wise Result Analysis</h3><div class="tablewrap" id="analysisTable"></div></div>
-    <div class="panel chart-panel" id="analysisChartPanel"><h3 id="analysisGraphCaption">Course-wise Mean Marks</h3><div class="chartbox"><canvas id="analysisChart"></canvas></div></div>
-  </section>
-
-  <section id="students" class="view">
-    <div class="caption" id="studentTitle">CAT-I Student Result Details</div><div class="subcap" id="studentCaption">Student-level result table</div>
-    <div class="visibility-toolbar noprint"><button class="lightbtn" data-toggle-target="studentPanel" data-hide-label="Hide Student Table" data-show-label="Show Student Table">Hide Student Table</button></div>
-    <div class="panel data-panel" id="studentPanel"><div class="tablewrap tall" id="studentTable"></div></div>
-  </section>
-
-  <section id="grades" class="view">
-    <div class="caption" id="gradeTitle">CAT-I Grade Levels Result</div><div class="subcap">Statistical what-if grade levels only; not official grades.</div>
-    <div class="gradeControls noprint"><label>S μ +<input id="gS" value="1.5" type="number" step="0.1"></label><label>A μ +<input id="gA" value="1.0" type="number" step="0.1"></label><label>B μ +<input id="gB" value="0.5" type="number" step="0.1"></label><label>D μ +<input id="gD" value="-0.5" type="number" step="0.1"></label><label>E μ +<input id="gE" value="-1.0" type="number" step="0.1"></label><button class="lightbtn" id="gradeBtn">Recalculate</button></div>
-    <div class="statusline" id="gradeSummary"></div>
-    <div class="visibility-toolbar noprint">
-      <button class="lightbtn" data-toggle-target="gradeBoundaryPanel" data-hide-label="Hide Grade Table" data-show-label="Show Grade Table">Hide Grade Table</button>
-      <button class="lightbtn" data-toggle-target="gradeChartPanel" data-hide-label="Hide Grade Chart" data-show-label="Show Grade Chart">Hide Grade Chart</button>
-    </div>
-    <div class="grid2"><div class="panel data-panel" id="gradeBoundaryPanel"><h3>Grade Boundary Table</h3><div class="tablewrap" id="gradeTable"></div></div><div class="panel chart-panel" id="gradeChartPanel"><h3>Complete Proposed Grade Distribution</h3><div class="chartbox"><canvas id="gradeChart"></canvas></div></div></div>
-  </section>
-
-  <section id="validation" class="view">
-    <div class="caption">Data Verification Result</div><div class="subcap" id="validationSubcap">Validation follows the selected analysis mode</div>
-    <div class="statusline" id="validationBadges"></div>
-    <div class="visibility-toolbar noprint"><button class="lightbtn" data-toggle-target="validationText" data-hide-label="Hide Validation Details" data-show-label="Show Validation Details">Hide Validation Details</button></div>
-    <div class="validation data-panel" id="validationText">Select one or more result files. The app will identify CAT-I and CAT-II from MARK_MODE, then click Analyze.</div>
-  </section>
-
-
-  <section id="cleaning" class="view">
-    <div class="caption">Data Description</div>
-    <div class="subcap">Dataset profile, source field definitions and statistical metric interpretation</div>
-    <div class="visibility-toolbar noprint">
-      <button class="lightbtn" data-toggle-target="profilePanel" data-hide-label="Hide Profile" data-show-label="Show Profile">Hide Profile</button>
-      <button class="lightbtn" data-toggle-target="dictionaryPanel" data-hide-label="Hide Dictionary" data-show-label="Show Dictionary">Hide Dictionary</button>
-      <button class="lightbtn" data-toggle-target="metricPanel" data-hide-label="Hide Metric Guide" data-show-label="Show Metric Guide">Hide Metric Guide</button>
-      <button class="lightbtn" data-toggle-target="previewPanel" data-hide-label="Hide Preview" data-show-label="Show Preview">Hide Preview</button>
-    </div>
-    <div class="panel data-panel" id="profilePanel"><h3>Current Dataset Profile</h3><div class="tablewrap" id="datasetProfile"></div></div>
-    <div class="panel data-panel" id="dictionaryPanel"><h3>Source Data Dictionary</h3><div class="dictNote">Each field is described according to how it is used in the analysis. Additional source columns are retained for reference.</div><div class="tablewrap tall" id="dataDictionary"></div></div>
-    <div class="panel data-panel" id="metricPanel"><h3>Statistical Metric Guide</h3><div class="dictNote">Definitions, formulas and interpretation are provided for the major values shown throughout the application.</div><div class="tablewrap tall" id="metricDictionary"></div></div>
-    <div class="panel data-panel" id="previewPanel"><h3>Validated Data Preview</h3><div class="subcap">First 100 validated rows used by the application.</div><div class="tablewrap tall" id="cleanPreview"></div></div>
-  </section>
-
-  <section id="summaryReport" class="view">
-    <div class="caption" id="summaryTitle">Summary & Conclusion Report</div>
-    <div class="subcap" id="summarySubtitle">Automatically generated from the selected analysis mode and active filters</div>
-    <div class="visibility-toolbar noprint">
-      <button class="lightbtn" data-toggle-target="summaryHeroBlock" data-hide-label="Hide Executive Summary" data-show-label="Show Executive Summary">Hide Executive Summary</button>
-      <button class="lightbtn" data-toggle-target="findingsPanel" data-hide-label="Hide Findings" data-show-label="Show Findings">Hide Findings</button>
-      <button class="lightbtn" data-toggle-target="qualityPanel" data-hide-label="Hide Quality Summary" data-show-label="Show Quality Summary">Hide Quality Summary</button>
-    </div>
-    <div class="summaryHero data-panel" id="summaryHeroBlock">
-      <div class="summaryCard"><h3>Executive Summary</h3><div class="summaryLead" id="executiveSummary">Analyze data to generate the executive summary.</div><div class="reportStamp" id="summaryStamp"></div></div>
-      <div class="summaryCard"><h3>Verification</h3><div id="summaryVerification">Waiting for data.</div></div>
-    </div>
-    <div class="panel data-panel" id="findingsPanel"><h3>Key Findings</h3><div class="findingGrid" id="summaryFindings"></div></div>
-    <div class="grid2">
-      <div class="panel"><h3>Highest Mean Groups</h3><div id="summaryTopGroups"></div></div>
-      <div class="panel"><h3>Lowest Mean Groups</h3><div id="summaryLowGroups"></div></div>
-    </div>
-    <div class="panel data-panel" id="qualityPanel"><h3>Data Quality Summary</h3><div id="summaryQuality"></div></div>
-    <div class="panel"><h3>Conclusion</h3><div class="conclusionBox" id="summaryConclusion">No conclusion available until data is analyzed.</div></div>
-    <div class="panel"><h3>Review Notes</h3><div class="recommendBox" id="summaryRecommendations">Statistical outputs are decision-support information and do not automatically determine official grades.</div></div>
-    <div class="developerCredit">Developed by Dr. Vikas Panthi, PC CSE Core, SCOPE</div>
-  </section>
-  <div class="developerCredit">Developed by Dr. Vikas Panthi, PC CSE Core, SCOPE</div>
-</div>
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Relative Grade Analytics</title><link rel="stylesheet" href="styles.css">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js"></script>
+</head><body>
+<header><h1>Relative Grade Analytics</h1><div class="sub">Student Assessment &amp; Result Analysis System</div></header>
+<section class="bar">
+<input type="file" id="file" accept=".xlsx,.xls,.csv" multiple>
+<label>Mode <select id="mode"><option value="CAT1">CAT-I Only</option><option value="CAT2">CAT-II Only</option><option value="COMB">Combined CAT-I + CAT-II</option></select></label>
+<label>CAT-I wt % <input type="number" id="w1" value="50" min="0" max="100"></label>
+<label>CAT-II wt % <input type="number" id="w2" value="50" min="0" max="100"></label>
+<label>Course <select id="fc"></select></label>
+<label>Faculty <select id="ff"></select></label>
+<button id="csv">Export filtered CSV</button><button id="shtml">Download Summary HTML</button><button id="pdf">Download PDF Report</button>
+</section>
+<div id="msg"></div>
+<nav id="nav"></nav>
+<main id="main"></main>
+<footer>Student data is processed locally in your browser. &nbsp;|&nbsp; Developed by Dr. Vikas Panthi, PC CSE Core, SCOPE</footer>
 <script src="app.js"></script>
-</body>
-</html>
+</body></html>
