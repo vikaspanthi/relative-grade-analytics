@@ -1,17 +1,19 @@
-RELATIVE GRADE ANALYTICS - FORMATTED REPORT VERSION
-===================================================
+Relative Grade Analytics - Modular HTML Edition
+
+Files:
+  index.html  - application structure
+  styles.css  - layout, responsive design, show/hide and print rules
+  app.js      - analysis logic, visualizations, visibility controls and exports
 
 Open index.html in Microsoft Edge or Google Chrome.
+Excel parsing, Chart.js and PDF libraries are loaded from CDN, so internet access is needed for those libraries.
 
-Key changes:
-- Data Cleaning process is no longer shown as a separate process/action button.
-- The interface provides a simpler Data Description page for dataset profile, field definitions and metric definitions.
-- Download PDF Report generates a professionally formatted A4 landscape PDF instead of printing the entire application screen.
-- PDF includes report metadata, key statistics, student-status summary, charts, course/faculty/class result table, grade-level result, conclusion, review notes and data-quality summary.
-- PDF pages include page numbers and developer credit.
-- CAT-I / CAT-II are detected from MARK_MODE; Combined analysis remains available when both modes are present.
+Visibility controls:
+- Hide/Show dashboard summary and charts
+- Hide/Show result tables and analysis charts
+- Hide/Show student table
+- Hide/Show grade table and grade chart
+- Hide/Show validation and data-description panels
+- Global Hide Charts / Show Charts button
 
-Developer:
-Dr. Vikas Panthi, PC CSE Core, SCOPE
-
-Note: Excel, chart and PDF libraries load from CDN, so internet access is required when starting the HTML application.
+Developed by Dr. Vikas Panthi, PC CSE Core, SCOPE
